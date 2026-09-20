@@ -1,0 +1,944 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates/BKT_Mentel
+  templates:
+    - uuid: 3f1b8a2c9d4e4b7a8c152e6f9a0b1c23
+      template: 'SNMP Listwa MSPDU BKT'
+      name: 'BKT MSPDU PDU by SNMP'
+      description: |
+        SNMP template for the MSPDU rack power strip (24 active outlets).
+        - LLD via JavaScript parsing of the raw SNMP name walk
+        - Dependent items: name, current, switch state, power factor, energy
+        - Power (W) is calculated as I x U x PF, rounded to an integer
+        Enterprise OID: 1.3.6.1.4.1.47394.7.1
+
+        NOTE: if the PDU does not measure per-outlet current (constant 0 A),
+        set {$MSPDU.OUTLET.CURRENT.MAX} = 0 to silence the current triggers.
+      groups:
+        - name: Templates/BKT_Mentel
+      items:
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c08
+          name: 'MSPDU: Buzzer switch'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.1.9.0
+          key: mspdu.device.buzzer
+          delay: 15m
+          history: 7d
+          value_type: CHAR
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c05
+          name: 'MSPDU: Firmware version'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.1.5.0
+          key: mspdu.device.firmware
+          delay: 1h
+          history: 30d
+          value_type: CHAR
+          triggers:
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b0b
+              expression: 'last(/SNMP Listwa MSPDU BKT/mspdu.device.firmware,#1)<>last(/SNMP Listwa MSPDU BKT/mspdu.device.firmware,#2) and length(last(/SNMP Listwa MSPDU BKT/mspdu.device.firmware))>0'
+              name: 'MSPDU: Firmware version has changed'
+              event_name: 'MSPDU: Firmware changed to {ITEM.VALUE1}'
+              priority: INFO
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: notice
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c06
+          name: 'MSPDU: Frequency'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.1.6.0
+          key: mspdu.device.frequency
+          delay: 5m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: Hz
+          triggers:
+            - uuid: d4e5f6a7b8c9401a8b3c4d5e6f701101
+              expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.device.frequency,10m)<{$MSPDU.FREQ.MIN} and min(/SNMP Listwa MSPDU BKT/mspdu.device.frequency,10m)>0'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.device.frequency,10m)>{$MSPDU.FREQ.MIN}+0.2'
+              name: 'MSPDU: Frequency below normal (<{$MSPDU.FREQ.MIN} Hz)'
+              event_name: 'MSPDU: Frequency {ITEM.VALUE1} Hz'
+              priority: WARNING
+              description: 'Typical when running on a generator or with an unstable grid.'
+              tags:
+                - tag: scope
+                  value: power
+              dependencies:
+                - name: 'MSPDU: No SNMP data - PDU unreachable'
+                  expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+            - uuid: d4e5f6a7b8c9401a8b3c4d5e6f701102
+              expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.device.frequency,10m)>{$MSPDU.FREQ.MAX}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.device.frequency,10m)<{$MSPDU.FREQ.MAX}-0.2'
+              name: 'MSPDU: Frequency above normal (>{$MSPDU.FREQ.MAX} Hz)'
+              event_name: 'MSPDU: Frequency {ITEM.VALUE1} Hz'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: power
+              dependencies:
+                - name: 'MSPDU: No SNMP data - PDU unreachable'
+                  expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c04
+          name: 'MSPDU: MAC address'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.1.4.0
+          key: mspdu.device.mac
+          delay: 1h
+          history: 30d
+          value_type: CHAR
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c01
+          name: 'MSPDU: Device name'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.1.1.0
+          key: mspdu.device.name
+          delay: 15m
+          history: 7d
+          value_type: CHAR
+          triggers:
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b0c
+              expression: 'last(/SNMP Listwa MSPDU BKT/mspdu.device.name,#1)<>last(/SNMP Listwa MSPDU BKT/mspdu.device.name,#2) and length(last(/SNMP Listwa MSPDU BKT/mspdu.device.name))>0'
+              name: 'MSPDU: Device name has changed'
+              priority: INFO
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: notice
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c03
+          name: 'MSPDU: Number of output ports'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.1.3.0
+          key: mspdu.device.output.number
+          delay: 1h
+          history: 30d
+          trends: '0'
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c02
+          name: 'MSPDU: PDU type'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.1.2.0
+          key: mspdu.device.type
+          delay: 15m
+          history: 7d
+          value_type: CHAR
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c07
+          name: 'MSPDU: Device uptime'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.1.8.0
+          key: mspdu.device.uptime
+          delay: 5m
+          history: 7d
+          value_type: CHAR
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c09
+          name: 'MSPDU: Uptime (seconds)'
+          type: DEPENDENT
+          key: mspdu.device.uptime.sec
+          history: 30d
+          units: uptime
+          description: 'Converts the textual uptime into seconds - makes it possible to detect a PDU restart.'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var s = String(value).trim();
+                  var d = 0, h = 0, mi = 0, se = 0;
+                  var md = s.match(/(\d+)\s*(?:d|day|days|dni|dzien|dzie)/i);
+                  if (md) { d = parseInt(md[1], 10); }
+                  var mt = s.match(/(\d+)\s*:\s*(\d+)\s*:\s*(\d+)/);
+                  if (mt) {
+                      h = parseInt(mt[1], 10); mi = parseInt(mt[2], 10); se = parseInt(mt[3], 10);
+                  } else {
+                      var mh = s.match(/(\d+)\s*(?:h|hour|godz)/i); if (mh) h = parseInt(mh[1], 10);
+                      var mm = s.match(/(\d+)\s*(?:m|min)/i);        if (mm) mi = parseInt(mm[1], 10);
+                      var ms = s.match(/(\d+)\s*(?:s|sec)/i);        if (ms) se = parseInt(ms[1], 10);
+                  }
+                  var total = d * 86400 + h * 3600 + mi * 60 + se;
+                  if (total === 0 && /^\d+$/.test(s)) { total = parseInt(s, 10); }
+                  return total;
+          master_item:
+            key: mspdu.device.uptime
+          triggers:
+            - uuid: d4e5f6a7b8c9401a8b3c4d5e6f701103
+              expression: 'last(/SNMP Listwa MSPDU BKT/mspdu.device.uptime.sec)<last(/SNMP Listwa MSPDU BKT/mspdu.device.uptime.sec,#2) and last(/SNMP Listwa MSPDU BKT/mspdu.device.uptime.sec)<{$MSPDU.UPTIME.RESTART}'
+              name: 'MSPDU: PDU has been restarted'
+              event_name: 'MSPDU: PDU restart (uptime {ITEM.VALUE1})'
+              priority: WARNING
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: notice
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2d01
+          name: 'MSPDU: Number of phases'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.2.0
+          key: mspdu.phase.count
+          delay: 1h
+          history: 30d
+          value_type: CHAR
+          tags:
+            - tag: component
+              value: phase
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2d11
+          name: 'MSPDU: Phase 1 - Current'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.2.1.1.0
+          key: mspdu.phase1.current
+          delay: 1m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: A
+          triggers:
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b01
+              expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+              name: 'MSPDU: No SNMP data - PDU unreachable'
+              priority: HIGH
+              description: 'No SNMP response - power loss, network failure or PDU controller fault.'
+              tags:
+                - tag: scope
+                  value: availability
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b03
+              expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,3m)>{$MSPDU.PHASE.CURRENT.MAX}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,5m)<{$MSPDU.PHASE.CURRENT.MAX}*0.9'
+              name: 'MSPDU: Phase 1 - OVERLOAD (current > {$MSPDU.PHASE.CURRENT.MAX}A)'
+              event_name: 'MSPDU: Phase 1 - overload ({ITEM.VALUE1} A)'
+              priority: HIGH
+              description: 'Risk of tripping the PDU overcurrent protection.'
+              tags:
+                - tag: scope
+                  value: capacity
+              dependencies:
+                - name: 'MSPDU: No SNMP data - PDU unreachable'
+                  expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b02
+              expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,5m)>{$MSPDU.PHASE.CURRENT.MAX}*0.8'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,5m)<{$MSPDU.PHASE.CURRENT.MAX}*0.75'
+              name: 'MSPDU: Phase 1 - current above 80% of limit'
+              event_name: 'MSPDU: Phase 1 - high load ({ITEM.VALUE1} A)'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: capacity
+              dependencies:
+                - name: 'MSPDU: Phase 1 - OVERLOAD (current > {$MSPDU.PHASE.CURRENT.MAX}A)'
+                  expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,3m)>{$MSPDU.PHASE.CURRENT.MAX}'
+                  recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,5m)<{$MSPDU.PHASE.CURRENT.MAX}*0.9'
+                - name: 'MSPDU: No SNMP data - PDU unreachable'
+                  expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+          tags:
+            - tag: component
+              value: phase1
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2d15
+          name: 'MSPDU: Phase 1 - Energy'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.2.1.5.0
+          key: mspdu.phase1.energy
+          delay: 5m
+          history: 30d
+          value_type: FLOAT
+          units: kWh
+          tags:
+            - tag: component
+              value: phase1
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2d14
+          name: 'MSPDU: Phase 1 - Power factor'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.2.1.4.0
+          key: mspdu.phase1.pf
+          delay: 1m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          triggers:
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b09
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.phase1.pf,15m)<{$MSPDU.PF.MIN} and min(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,15m)>{$MSPDU.PF.CURRENT.MIN}'
+              name: 'MSPDU: Phase 1 - low power factor (<{$MSPDU.PF.MIN})'
+              priority: INFO
+              manual_close: 'YES'
+              description: 'PF is evaluated only when current > {$MSPDU.PF.CURRENT.MIN} A - with no load PF=0 is normal.'
+              tags:
+                - tag: scope
+                  value: power
+              dependencies:
+                - name: 'MSPDU: No SNMP data - PDU unreachable'
+                  expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+          tags:
+            - tag: component
+              value: phase1
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2d13
+          name: 'MSPDU: Phase 1 - Power'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.2.1.3.0
+          key: mspdu.phase1.power
+          delay: 1m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: W
+          tags:
+            - tag: component
+              value: phase1
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2d12
+          name: 'MSPDU: Phase 1 - Voltage'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.2.1.2.0
+          key: mspdu.phase1.voltage
+          delay: 1m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: V
+          triggers:
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b04
+              expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.phase1.voltage,5m)<{$MSPDU.VOLTAGE.MIN.CRIT}'
+              name: 'MSPDU: Voltage critically low (<{$MSPDU.VOLTAGE.MIN.CRIT}V)'
+              event_name: 'MSPDU: Voltage {ITEM.VALUE1} V'
+              priority: HIGH
+              tags:
+                - tag: scope
+                  value: power
+              dependencies:
+                - name: 'MSPDU: No SNMP data - PDU unreachable'
+                  expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b05
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.phase1.voltage,5m)<{$MSPDU.VOLTAGE.MIN.WARN}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.phase1.voltage,5m)>{$MSPDU.VOLTAGE.MIN.WARN}+3'
+              name: 'MSPDU: Voltage below normal (<{$MSPDU.VOLTAGE.MIN.WARN}V)'
+              event_name: 'MSPDU: Voltage {ITEM.VALUE1} V'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: power
+              dependencies:
+                - name: 'MSPDU: Voltage critically low (<{$MSPDU.VOLTAGE.MIN.CRIT}V)'
+                  expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.phase1.voltage,5m)<{$MSPDU.VOLTAGE.MIN.CRIT}'
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b07
+              expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.phase1.voltage,3m)>{$MSPDU.VOLTAGE.MAX.CRIT}'
+              name: 'MSPDU: Voltage critically high (>{$MSPDU.VOLTAGE.MAX.CRIT}V)'
+              event_name: 'MSPDU: Voltage {ITEM.VALUE1} V'
+              priority: HIGH
+              description: 'Risk of damaging the power supplies of devices installed in the rack.'
+              tags:
+                - tag: scope
+                  value: power
+              dependencies:
+                - name: 'MSPDU: No SNMP data - PDU unreachable'
+                  expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b06
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.phase1.voltage,5m)>{$MSPDU.VOLTAGE.MAX.WARN}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.phase1.voltage,5m)<{$MSPDU.VOLTAGE.MAX.WARN}-3'
+              name: 'MSPDU: Voltage above normal (>{$MSPDU.VOLTAGE.MAX.WARN}V)'
+              event_name: 'MSPDU: Voltage {ITEM.VALUE1} V'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: power
+              dependencies:
+                - name: 'MSPDU: Voltage critically high (>{$MSPDU.VOLTAGE.MAX.CRIT}V)'
+                  expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.phase1.voltage,3m)>{$MSPDU.VOLTAGE.MAX.CRIT}'
+          tags:
+            - tag: component
+              value: phase1
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2e01
+          name: 'MSPDU: Sensor 1 - Temperature'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.4.1.0
+          key: mspdu.sensor.temp1
+          delay: 1m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: °C
+          triggers:
+            - uuid: c3a17f402b6d4e9d8a5b1c7e9f204a01
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.sensor.temp1,5m)>{$MSPDU.OUTLET.TEMP.MAX} and {$MSPDU.SENSOR1.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.sensor.temp1,5m)<{$MSPDU.OUTLET.TEMP.MAX}-2'
+              name: 'MSPDU: Sensor 1 - temperature too high (>{$MSPDU.OUTLET.TEMP.MAX}C)'
+              event_name: 'MSPDU: Sensor 1 - {ITEM.VALUE1} C'
+              priority: AVERAGE
+              tags:
+                - tag: scope
+                  value: temperature
+            - uuid: c3a17f402b6d4e9d8a5b1c7e9f204a02
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.sensor.temp1,5m)<{$MSPDU.OUTLET.TEMP.MIN} and {$MSPDU.SENSOR1.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.sensor.temp1,5m)>{$MSPDU.OUTLET.TEMP.MIN}+2'
+              name: 'MSPDU: Sensor 1 - temperature too low (<{$MSPDU.OUTLET.TEMP.MIN}C)'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: temperature
+          tags:
+            - tag: component
+              value: sensor1
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2e02
+          name: 'MSPDU: Sensor 2 - Temperature'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.4.2.0
+          key: mspdu.sensor.temp2
+          delay: 1m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: °C
+          triggers:
+            - uuid: c3a17f402b6d4e9d8a5b1c7e9f204a03
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.sensor.temp2,5m)>{$MSPDU.OUTLET.TEMP.MAX} and {$MSPDU.SENSOR2.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.sensor.temp2,5m)<{$MSPDU.OUTLET.TEMP.MAX}-2'
+              name: 'MSPDU: Sensor 2 - temperature too high (>{$MSPDU.OUTLET.TEMP.MAX}C)'
+              event_name: 'MSPDU: Sensor 2 - {ITEM.VALUE1} C'
+              priority: AVERAGE
+              tags:
+                - tag: scope
+                  value: temperature
+            - uuid: c3a17f402b6d4e9d8a5b1c7e9f204a04
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.sensor.temp2,5m)<{$MSPDU.OUTLET.TEMP.MIN} and {$MSPDU.SENSOR2.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.sensor.temp2,5m)>{$MSPDU.OUTLET.TEMP.MIN}+2'
+              name: 'MSPDU: Sensor 2 - temperature too low (<{$MSPDU.OUTLET.TEMP.MIN}C)'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: temperature
+          tags:
+            - tag: component
+              value: sensor2
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2e03
+          name: 'MSPDU: Sensor 1 - Humidity'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.4.3.0
+          key: mspdu.sensor.hum1
+          delay: 1m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: '%'
+          triggers:
+            - uuid: c3a17f402b6d4e9d8a5b1c7e9f204a05
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.sensor.hum1,10m)>{$MSPDU.OUTLET.HUM.MAX} and {$MSPDU.SENSOR1.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.sensor.hum1,10m)<{$MSPDU.OUTLET.HUM.MAX}-5'
+              name: 'MSPDU: Sensor 1 - humidity too high (>{$MSPDU.OUTLET.HUM.MAX}%)'
+              event_name: 'MSPDU: Sensor 1 - humidity {ITEM.VALUE1}%'
+              priority: AVERAGE
+              tags:
+                - tag: scope
+                  value: humidity
+            - uuid: c3a17f402b6d4e9d8a5b1c7e9f204a06
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.sensor.hum1,10m)<{$MSPDU.HUM.MIN} and {$MSPDU.SENSOR1.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.sensor.hum1,10m)>{$MSPDU.HUM.MIN}+5'
+              name: 'MSPDU: Sensor 1 - humidity too low (<{$MSPDU.HUM.MIN}%)'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: humidity
+          tags:
+            - tag: component
+              value: sensor1
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2e04
+          name: 'MSPDU: Sensor 2 - Humidity'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.4.4.0
+          key: mspdu.sensor.hum2
+          delay: 1m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: '%'
+          triggers:
+            - uuid: c3a17f402b6d4e9d8a5b1c7e9f204a07
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.sensor.hum2,10m)>{$MSPDU.OUTLET.HUM.MAX} and {$MSPDU.SENSOR2.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.sensor.hum2,10m)<{$MSPDU.OUTLET.HUM.MAX}-5'
+              name: 'MSPDU: Sensor 2 - humidity too high (>{$MSPDU.OUTLET.HUM.MAX}%)'
+              event_name: 'MSPDU: Sensor 2 - humidity {ITEM.VALUE1}%'
+              priority: AVERAGE
+              tags:
+                - tag: scope
+                  value: humidity
+            - uuid: c3a17f402b6d4e9d8a5b1c7e9f204a08
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.sensor.hum2,10m)<{$MSPDU.HUM.MIN} and {$MSPDU.SENSOR2.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.sensor.hum2,10m)>{$MSPDU.HUM.MIN}+5'
+              name: 'MSPDU: Sensor 2 - humidity too low (<{$MSPDU.HUM.MIN}%)'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: humidity
+          tags:
+            - tag: component
+              value: sensor2
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2f02
+          name: 'MSPDU: RAW walk - outlet current'
+          type: SNMP_AGENT
+          snmp_oid: 'walk[1.3.6.1.4.1.47394.7.1.8.1]'
+          key: mspdu.walk.outlet.current.raw
+          delay: 1m
+          history: '0'
+          value_type: TEXT
+          tags:
+            - tag: component
+              value: walk
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2f12
+          name: 'MSPDU: RAW walk - outlet energy'
+          type: SNMP_AGENT
+          snmp_oid: 'walk[1.3.6.1.4.1.47394.7.1.10]'
+          key: mspdu.walk.outlet.energy.raw
+          delay: 5m
+          history: '0'
+          value_type: TEXT
+          tags:
+            - tag: component
+              value: walk
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2f01
+          name: 'MSPDU: RAW walk - outlet names'
+          type: SNMP_AGENT
+          snmp_oid: 'walk[1.3.6.1.4.1.47394.7.1.5]'
+          key: mspdu.walk.outlet.names.raw
+          delay: 1h
+          history: '0'
+          value_type: TEXT
+          tags:
+            - tag: component
+              value: walk
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2f11
+          name: 'MSPDU: RAW walk - outlet power factor'
+          type: SNMP_AGENT
+          snmp_oid: 'walk[1.3.6.1.4.1.47394.7.1.9]'
+          key: mspdu.walk.outlet.pf.raw
+          delay: 1m
+          history: '0'
+          value_type: TEXT
+          tags:
+            - tag: component
+              value: walk
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2f07
+          name: 'MSPDU: RAW walk - outlet switch state'
+          type: SNMP_AGENT
+          snmp_oid: 'walk[1.3.6.1.4.1.47394.7.1.7]'
+          key: mspdu.walk.outlet.switch.raw
+          delay: 1m
+          history: '0'
+          value_type: TEXT
+          tags:
+            - tag: component
+              value: walk
+      discovery_rules:
+        - uuid: 1b2c3d4e5f6a4b7c9d8e9f0a1b2c3d01
+          name: 'MSPDU: Outlet discovery'
+          type: DEPENDENT
+          key: mspdu.outlet.discovery
+          description: 'Outlet LLD; macros: {#OUTLET_INDEX}, {#OUTLET_NAME}'
+          master_item:
+            key: mspdu.walk.outlet.names.raw
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var lines = value.split('\n');
+                  var re = /\.5\.(\d+)\.0\s*=\s*STRING:\s*"([^"]*)"/;
+                  var result = [];
+                  var seen = {};
+                  for (var i = 0; i < lines.length; i++) {
+                      var m = lines[i].match(re);
+                      if (m) {
+                          var idx = m[1];
+                          var nm = m[2];
+                          if (nm === '--' || nm === '') continue;
+                          if (seen[idx]) continue;
+                          seen[idx] = true;
+                          result.push({
+                              "{#OUTLET_INDEX}": idx,
+                              "{#OUTLET_NAME}": nm
+                          });
+                      }
+                  }
+                  return JSON.stringify(result);
+          item_prototypes:
+            - uuid: 2c3d4e5f6a7b4c8d9e0f1a2b3c4d5e01
+              name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - Name'
+              type: DEPENDENT
+              key: 'mspdu.outlet.name[{#OUTLET_INDEX}]'
+              history: 30d
+              value_type: CHAR
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var lines = value.split('\n');
+                      var idx = '{#OUTLET_INDEX}';
+                      var re = new RegExp('\\.5\\.' + idx + '\\.0\\s*=\\s*STRING:\\s*"([^"]*)"');
+                      for (var i = 0; i < lines.length; i++) {
+                          var m = lines[i].match(re);
+                          if (m) return m[1];
+                      }
+                      return '';
+              master_item:
+                key: mspdu.walk.outlet.names.raw
+              tags:
+                - tag: component
+                  value: outlet
+                - tag: outlet
+                  value: '{#OUTLET_INDEX}'
+            - uuid: 2c3d4e5f6a7b4c8d9e0f1a2b3c4d5e09
+              name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - Switch state'
+              type: DEPENDENT
+              key: 'mspdu.outlet.switch[{#OUTLET_INDEX}]'
+              history: 7d
+              value_type: CHAR
+              description: 'The value is normalized to upper case (ON/OFF).'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var lines = value.split('\n');
+                      var idx = '{#OUTLET_INDEX}';
+                      var re = new RegExp('\\.7\\.' + idx + '\\.0\\s*=\\s*STRING:\\s*"([^"]*)"');
+                      for (var i = 0; i < lines.length; i++) {
+                          var m = lines[i].match(re);
+                          if (m) return m[1].trim().toUpperCase();
+                      }
+                      return '';
+              master_item:
+                key: mspdu.walk.outlet.switch.raw
+              trigger_prototypes:
+                - uuid: b2e1d3c45f6a4b7c8d9e0f1a2b3c4d01
+                  expression: 'last(/SNMP Listwa MSPDU BKT/mspdu.outlet.switch[{#OUTLET_INDEX}])<>"{$MSPDU.OUTLET.STATE.ON}" and length(last(/SNMP Listwa MSPDU BKT/mspdu.outlet.switch[{#OUTLET_INDEX}]))>0 and {$MSPDU.OUTLET.OFF.ALERT:"{#OUTLET_INDEX}"}=1'
+                  name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - SWITCHED OFF'
+                  event_name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) is switched off ({ITEM.VALUE1})'
+                  priority: AVERAGE
+                  description: 'To silence a specific outlet set {$MSPDU.OUTLET.OFF.ALERT:"{#OUTLET_INDEX}"} = 0.'
+                  tags:
+                    - tag: scope
+                      value: availability
+                  dependencies:
+                    - name: 'MSPDU: No SNMP data - PDU unreachable'
+                      expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+                - uuid: b2e1d3c45f6a4b7c8d9e0f1a2b3c4d02
+                  expression: 'last(/SNMP Listwa MSPDU BKT/mspdu.outlet.switch[{#OUTLET_INDEX}],#1)<>last(/SNMP Listwa MSPDU BKT/mspdu.outlet.switch[{#OUTLET_INDEX}],#2) and length(last(/SNMP Listwa MSPDU BKT/mspdu.outlet.switch[{#OUTLET_INDEX}]))>0'
+                  name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - switch state changed'
+                  event_name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) -> {ITEM.VALUE1}'
+                  priority: INFO
+                  manual_close: 'YES'
+                  tags:
+                    - tag: scope
+                      value: notice
+              tags:
+                - tag: component
+                  value: outlet
+                - tag: outlet
+                  value: '{#OUTLET_INDEX}'
+            - uuid: 2c3d4e5f6a7b4c8d9e0f1a2b3c4d5e02
+              name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - Current'
+              type: DEPENDENT
+              key: 'mspdu.outlet.current[{#OUTLET_INDEX}]'
+              history: 7d
+              value_type: FLOAT
+              trends: 90d
+              units: A
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var lines = value.split('\n');
+                      var idx = '{#OUTLET_INDEX}';
+                      var re = new RegExp('\\.8\\.1\\.' + idx + '\\.0\\s*=\\s*STRING:\\s*"([^"]*)"');
+                      for (var i = 0; i < lines.length; i++) {
+                          var m = lines[i].match(re);
+                          if (m) {
+                              if (m[1] === '--') return 0;
+                              var v = parseFloat(m[1]);
+                              return isNaN(v) ? 0 : v;
+                          }
+                      }
+                      return 0;
+              master_item:
+                key: mspdu.walk.outlet.current.raw
+              trigger_prototypes:
+                - uuid: b2e1d3c45f6a4b7c8d9e0f1a2b3c4d04
+                  expression: '{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}>0 and min(/SNMP Listwa MSPDU BKT/mspdu.outlet.current[{#OUTLET_INDEX}],3m)>{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.outlet.current[{#OUTLET_INDEX}],5m)<{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}*0.9'
+                  name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - current OVERLOAD'
+                  event_name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - {ITEM.VALUE1} A'
+                  priority: HIGH
+                  tags:
+                    - tag: scope
+                      value: capacity
+                  dependencies:
+                    - name: 'MSPDU: No SNMP data - PDU unreachable'
+                      expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+                - uuid: b2e1d3c45f6a4b7c8d9e0f1a2b3c4d03
+                  expression: '{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}>0 and min(/SNMP Listwa MSPDU BKT/mspdu.outlet.current[{#OUTLET_INDEX}],5m)>{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}*0.8'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.outlet.current[{#OUTLET_INDEX}],5m)<{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}*0.75'
+                  name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - current > 80% of limit'
+                  event_name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - {ITEM.VALUE1} A'
+                  priority: WARNING
+                  tags:
+                    - tag: scope
+                      value: capacity
+                  dependencies:
+                    - name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - current OVERLOAD'
+                      expression: '{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}>0 and min(/SNMP Listwa MSPDU BKT/mspdu.outlet.current[{#OUTLET_INDEX}],3m)>{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}'
+                      recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.outlet.current[{#OUTLET_INDEX}],5m)<{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}*0.9'
+                    - name: 'MSPDU: No SNMP data - PDU unreachable'
+                      expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+              tags:
+                - tag: component
+                  value: outlet
+                - tag: outlet
+                  value: '{#OUTLET_INDEX}'
+            - uuid: 2c3d4e5f6a7b4c8d9e0f1a2b3c4d5e07
+              name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - Power factor'
+              type: DEPENDENT
+              key: 'mspdu.outlet.pf[{#OUTLET_INDEX}]'
+              history: 7d
+              value_type: FLOAT
+              trends: 90d
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var lines = value.split('\n');
+                      var idx = '{#OUTLET_INDEX}';
+                      var re = new RegExp('\\.9\\.' + idx + '\\.0\\s*=\\s*STRING:\\s*"([^"]*)"');
+                      for (var i = 0; i < lines.length; i++) {
+                          var m = lines[i].match(re);
+                          if (m) {
+                              if (m[1] === '--') return 0;
+                              var v = parseFloat(m[1]);
+                              return isNaN(v) ? 0 : v;
+                          }
+                      }
+                      return 0;
+              master_item:
+                key: mspdu.walk.outlet.pf.raw
+              trigger_prototypes:
+                - uuid: b2e1d3c45f6a4b7c8d9e0f1a2b3c4d08
+                  expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.outlet.pf[{#OUTLET_INDEX}],15m)<{$MSPDU.OUTLET.PF.MIN} and min(/SNMP Listwa MSPDU BKT/mspdu.outlet.power.w[{#OUTLET_INDEX}],15m)>{$MSPDU.OUTLET.PF.POWER.MIN}'
+                  name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - low PF (<{$MSPDU.OUTLET.PF.MIN})'
+                  priority: INFO
+                  manual_close: 'YES'
+                  description: 'Evaluated only when power > {$MSPDU.OUTLET.PF.POWER.MIN} W - with no load PF=0 is normal.'
+                  tags:
+                    - tag: scope
+                      value: power
+                  dependencies:
+                    - name: 'MSPDU: No SNMP data - PDU unreachable'
+                      expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+              tags:
+                - tag: component
+                  value: outlet
+                - tag: outlet
+                  value: '{#OUTLET_INDEX}'
+            - uuid: 2c3d4e5f6a7b4c8d9e0f1a2b3c4d5e13
+              name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - Power'
+              type: CALCULATED
+              key: 'mspdu.outlet.power.w[{#OUTLET_INDEX}]'
+              delay: 1m
+              history: 7d
+              value_type: FLOAT
+              trends: 90d
+              units: W
+              params: 'last(//mspdu.outlet.current[{#OUTLET_INDEX}]) * last(//mspdu.phase1.voltage) * last(//mspdu.outlet.pf[{#OUTLET_INDEX}])'
+              description: |
+                Instantaneous power of outlet {#OUTLET_INDEX} = Current x Voltage x PF, rounded to whole watts.
+                NOTE: if the PDU does not report per-outlet current, this value will always be 0.
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var v = parseFloat(value);
+                      if (isNaN(v)) return 0;
+                      return Math.round(v);
+              trigger_prototypes:
+                - uuid: b2e1d3c45f6a4b7c8d9e0f1a2b3c4d06
+                  expression: '{$MSPDU.OUTLET.POWER.MAX:"{#OUTLET_INDEX}"}>0 and min(/SNMP Listwa MSPDU BKT/mspdu.outlet.power.w[{#OUTLET_INDEX}],5m)>{$MSPDU.OUTLET.POWER.MAX:"{#OUTLET_INDEX}"}'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.outlet.power.w[{#OUTLET_INDEX}],5m)<{$MSPDU.OUTLET.POWER.MAX:"{#OUTLET_INDEX}"}*0.9'
+                  name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - power above limit'
+                  event_name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - {ITEM.VALUE1} W'
+                  priority: WARNING
+                  tags:
+                    - tag: scope
+                      value: capacity
+                  dependencies:
+                    - name: 'MSPDU: No SNMP data - PDU unreachable'
+                      expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+                - uuid: b2e1d3c45f6a4b7c8d9e0f1a2b3c4d09
+                  expression: '{$MSPDU.OUTLET.POWER.MIN:"{#OUTLET_INDEX}"}>0 and max(/SNMP Listwa MSPDU BKT/mspdu.outlet.power.w[{#OUTLET_INDEX}],{$MSPDU.OUTLET.NOLOAD.PERIOD:"{#OUTLET_INDEX}"})<{$MSPDU.OUTLET.POWER.MIN:"{#OUTLET_INDEX}"} and last(/SNMP Listwa MSPDU BKT/mspdu.outlet.switch[{#OUTLET_INDEX}])="{$MSPDU.OUTLET.STATE.ON}"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.outlet.power.w[{#OUTLET_INDEX}],5m)>={$MSPDU.OUTLET.POWER.MIN:"{#OUTLET_INDEX}"}'
+                  name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - no load while switched on'
+                  event_name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - {ITEM.VALUE1} W while state is ON'
+                  priority: WARNING
+                  description: |
+                    Probable power supply failure or the device has been disconnected.
+                    Enable per outlet: {$MSPDU.OUTLET.POWER.MIN:"{#OUTLET_INDEX}"} = e.g. 20 (W).
+                    Value 0 = trigger disabled.
+                  tags:
+                    - tag: scope
+                      value: availability
+                  dependencies:
+                    - name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - SWITCHED OFF'
+                      expression: 'last(/SNMP Listwa MSPDU BKT/mspdu.outlet.switch[{#OUTLET_INDEX}])<>"{$MSPDU.OUTLET.STATE.ON}" and length(last(/SNMP Listwa MSPDU BKT/mspdu.outlet.switch[{#OUTLET_INDEX}]))>0 and {$MSPDU.OUTLET.OFF.ALERT:"{#OUTLET_INDEX}"}=1'
+                    - name: 'MSPDU: No SNMP data - PDU unreachable'
+                      expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+              tags:
+                - tag: component
+                  value: outlet
+                - tag: outlet
+                  value: '{#OUTLET_INDEX}'
+            - uuid: 2c3d4e5f6a7b4c8d9e0f1a2b3c4d5e12
+              name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - Energy'
+              type: DEPENDENT
+              key: 'mspdu.outlet.energy[{#OUTLET_INDEX}]'
+              history: 30d
+              value_type: FLOAT
+              units: kWh
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var lines = value.split('\n');
+                      var idx = '{#OUTLET_INDEX}';
+                      var re = new RegExp('\\.10\\.' + idx + '\\.0\\s*=\\s*STRING:\\s*"([^"]*)"');
+                      for (var i = 0; i < lines.length; i++) {
+                          var m = lines[i].match(re);
+                          if (m) {
+                              if (m[1] === '--') return 0;
+                              var v = parseFloat(m[1]);
+                              return isNaN(v) ? 0 : v;
+                          }
+                      }
+                      return 0;
+              master_item:
+                key: mspdu.walk.outlet.energy.raw
+              trigger_prototypes:
+                - uuid: b2e1d3c45f6a4b7c8d9e0f1a2b3c4d07
+                  expression: 'change(/SNMP Listwa MSPDU BKT/mspdu.outlet.energy[{#OUTLET_INDEX}])<0'
+                  name: 'MSPDU: Outlet {#OUTLET_INDEX} ({#OUTLET_NAME}) - energy counter has been reset'
+                  priority: INFO
+                  manual_close: 'YES'
+                  tags:
+                    - tag: scope
+                      value: notice
+              tags:
+                - tag: component
+                  value: outlet
+                - tag: outlet
+                  value: '{#OUTLET_INDEX}'
+      macros:
+        - macro: '{$MSPDU.NODATA}'
+          value: 10m
+          description: 'Period without data after which the unreachable alarm is raised.'
+        - macro: '{$MSPDU.UPTIME.RESTART}'
+          value: '600'
+          description: 'Uptime below this value (s) after a counter drop = PDU restart.'
+        - macro: '{$MSPDU.VOLTAGE.MIN.WARN}'
+          value: '207'
+          description: 'Voltage - lower warning threshold (230 V -10%).'
+        - macro: '{$MSPDU.VOLTAGE.MIN.CRIT}'
+          value: '195'
+          description: 'Voltage - lower critical threshold.'
+        - macro: '{$MSPDU.VOLTAGE.MAX.WARN}'
+          value: '253'
+          description: 'Voltage - upper warning threshold (230 V +10%).'
+        - macro: '{$MSPDU.VOLTAGE.MAX.CRIT}'
+          value: '260'
+          description: 'Voltage - upper critical threshold.'
+        - macro: '{$MSPDU.FREQ.MIN}'
+          value: '49'
+          description: 'Minimum acceptable line frequency (Hz).'
+        - macro: '{$MSPDU.FREQ.MAX}'
+          value: '51'
+          description: 'Maximum acceptable line frequency (Hz).'
+        - macro: '{$MSPDU.PHASE.CURRENT.MAX}'
+          value: '16'
+          description: 'Rated input current of the PDU (A). Thresholds: 80% = WARNING, 100% = HIGH.'
+        - macro: '{$MSPDU.PF.MIN}'
+          value: '0.6'
+          description: 'Minimum acceptable phase power factor.'
+        - macro: '{$MSPDU.PF.CURRENT.MIN}'
+          value: '1'
+          description: 'Below this current (A) the phase power factor is ignored.'
+        - macro: '{$MSPDU.OUTLET.STATE.ON}'
+          value: 'ON'
+          description: 'Value that means the outlet is switched on. The item normalizes the reading to UPPER case.'
+        - macro: '{$MSPDU.OUTLET.OFF.ALERT}'
+          value: '1'
+          description: 'Alert when an outlet is switched off. Context: {$MSPDU.OUTLET.OFF.ALERT:"5"} = 0 to silence outlet 5.'
+        - macro: '{$MSPDU.OUTLET.CURRENT.MAX}'
+          value: '16'
+          description: 'Maximum outlet current (A). 0 = current triggers disabled (e.g. when the PDU does not measure per-outlet current).'
+        - macro: '{$MSPDU.OUTLET.POWER.MAX}'
+          value: '3000'
+          description: 'Maximum outlet power (W). 0 = trigger disabled.'
+        - macro: '{$MSPDU.OUTLET.POWER.MIN}'
+          value: '0'
+          description: 'Minimum expected outlet power (W). 0 = "no load" trigger DISABLED. Set it per outlet, e.g. {$MSPDU.OUTLET.POWER.MIN:"3"} = 30.'
+        - macro: '{$MSPDU.OUTLET.NOLOAD.PERIOD}'
+          value: 15m
+          description: 'Evaluation window for the outlet no-load condition.'
+        - macro: '{$MSPDU.OUTLET.PF.MIN}'
+          value: '0.6'
+          description: 'Minimum outlet power factor.'
+        - macro: '{$MSPDU.OUTLET.PF.POWER.MIN}'
+          value: '50'
+          description: 'Below this power (W) the outlet power factor is ignored.'
+        - macro: '{$MSPDU.OUTLET.TEMP.MAX}'
+          value: '35'
+          description: 'Maximum ambient temperature (C).'
+        - macro: '{$MSPDU.OUTLET.TEMP.MIN}'
+          value: '5'
+          description: 'Minimum ambient temperature (C).'
+        - macro: '{$MSPDU.OUTLET.HUM.MAX}'
+          value: '80'
+          description: 'Maximum humidity (%).'
+        - macro: '{$MSPDU.HUM.MIN}'
+          value: '20'
+          description: 'Minimum humidity (%).'
+        - macro: '{$MSPDU.SENSOR1.ENABLED}'
+          value: '1'
+          description: 'Whether sensor 1 is physically connected (0/1) - prevents false alarms when the reading is 0.'
+        - macro: '{$MSPDU.SENSOR2.ENABLED}'
+          value: '0'
+          description: 'Whether sensor 2 is physically connected (0/1).'
