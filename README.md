@@ -669,7 +669,7 @@ pod warunkiem zachowania informacji o prawach autorskich i treści licencji.
 Oprogramowanie dostarczane jest „**tak jak jest**", bez jakichkolwiek gwarancji.
 
 ```
-MIT License · Copyright (c) 2025 Sebastian Mentel
+MIT License · Copyright (c) 2026 Sebastian Mentel
 ```
 
 ### Zastrzeżenie
@@ -1346,7 +1346,7 @@ redistribute it, provided the copyright notice and licence text are retained.
 Provided "**as is**", without warranty of any kind.
 
 ```
-MIT License · Copyright (c) 2025 Sebastian Mentel
+MIT License · Copyright (c) 2026 Sebastian Mentel
 ```
 
 ### Disclaimer
