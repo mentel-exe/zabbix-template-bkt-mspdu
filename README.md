@@ -1,46 +1,51 @@
-# BKT MSPDU PDU — szablon Zabbix (SNMP)
+<div align="center">
+
+# BKT MSPDU PDU — Zabbix Template (SNMP)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Zabbix 7.4](https://img.shields.io/badge/Zabbix-7.4-red.svg)](https://www.zabbix.com/)
-[![SNMP](https://img.shields.io/badge/protocol-SNMP%20v2c-blue.svg)](#wymagania--requirements)
-[![Outlets](https://img.shields.io/badge/outlets-24%20LLD-orange.svg)](#discovery-lld)
+[![SNMP](https://img.shields.io/badge/protocol-SNMP%20v2c-blue.svg)](#wymagania)
+[![Outlets](https://img.shields.io/badge/outlets-24%20LLD-orange.svg)](#wykrywanie-gniazd-lld)
 
-**PL:** Szablon Zabbix 7.4 dla listew zasilających (PDU) **BKT MSPDU** — monitoring fazy, 24 gniazd
-przez Low-Level Discovery, czujników temperatury i wilgotności, z rozbudowanym drzewem zależności
-triggerów eliminującym lawiny alarmów.
+**Enterprise OID: `1.3.6.1.4.1.47394.7.1`**
 
-**EN:** Zabbix 7.4 template for **BKT MSPDU** rack power distribution units — phase metrics,
-24 outlets via Low-Level Discovery, temperature/humidity sensors, with a full trigger dependency
-tree that prevents alert storms.
+### 🌐 Wybierz język / Choose language
 
-> Enterprise OID: **`1.3.6.1.4.1.47394.7.1`**
+**[🇵🇱 POLSKI](#-wersja-polska)**  ·  **[🇬🇧 ENGLISH](#-english-version)**
+
+</div>
+
+---
+---
+
+# 🇵🇱 Wersja polska
+
+Szablon Zabbix 7.4 dla listew zasilających (PDU) **BKT MSPDU** — monitoring parametrów fazy,
+24 gniazd przez Low-Level Discovery, czujników temperatury i wilgotności. Rozbudowane drzewo
+zależności triggerów eliminuje lawiny alarmów przy zaniku zasilania.
+
+## Spis treści
+
+- [Funkcje](#funkcje)
+- [Wymagania](#wymagania)
+- [Mapa OID](#mapa-oid)
+- [Instalacja](#instalacja)
+- [Makra](#makra)
+- [Metryki](#metryki)
+- [Wykrywanie gniazd (LLD)](#wykrywanie-gniazd-lld)
+- [Triggery](#triggery)
+- [Drzewo zależności](#drzewo-zależności)
+- [Przepisy konfiguracyjne](#przepisy-konfiguracyjne)
+- [Rozwiązywanie problemów](#rozwiązywanie-problemów)
+- [Walidacja pliku](#walidacja-pliku)
+- [Najczęstsze pytania](#najczęstsze-pytania)
+- [Plan rozwoju](#plan-rozwoju)
+- [Współtworzenie](#współtworzenie)
+- [Licencja](#licencja)
 
 ---
 
-## Spis treści / Table of contents
-
-- [Funkcje / Features](#funkcje--features)
-- [Wymagania / Requirements](#wymagania--requirements)
-- [Mapa OID](#mapa-oid--oid-map)
-- [Instalacja / Installation](#instalacja--installation)
-- [Makra / Macros](#makra--macros)
-- [Metryki / Items](#metryki--items)
-- [Discovery (LLD)](#discovery-lld)
-- [Triggery / Triggers](#triggery--triggers)
-- [Drzewo zależności](#drzewo-zależności--dependency-tree)
-- [Przepisy konfiguracyjne / Recipes](#przepisy-konfiguracyjne--recipes)
-- [Rozwiązywanie problemów / Troubleshooting](#rozwiązywanie-problemów--troubleshooting)
-- [Walidacja pliku / Validation](#walidacja-pliku--validation)
-- [FAQ](#faq)
-- [Roadmap](#roadmap)
-- [Contributing](#contributing)
-- [Licencja / License](#licencja--license)
-
----
-
-## Funkcje / Features
-
-**PL**
+## Funkcje
 
 - ✅ **LLD 24 gniazd** — automatyczne wykrywanie na podstawie nazw gniazd (`walk`)
 - ✅ **Dependent items** — jeden `walk` SNMP zasila wszystkie metryki gniazd (minimalne obciążenie PDU)
@@ -52,21 +57,9 @@ tree that prevents alert storms.
 - ✅ **Detekcja restartu** — parsowanie tekstowego uptime → sekundy
 - ✅ **Czujniki opcjonalne** — niepodłączony czujnik nie generuje fałszywych alarmów
 
-**EN**
-
-- ✅ 24-outlet LLD from SNMP name walk
-- ✅ Dependent items — a single SNMP walk feeds all outlet metrics
-- ✅ Per-outlet power calculated as `I × U × PF`
-- ✅ No-load detection (PSU failure / device unplugged)
-- ✅ Full trigger dependency tree — SNMP loss silences everything else
-- ✅ Hysteresis via dedicated recovery expressions
-- ✅ Per-outlet context-macro muting
-- ✅ Reboot detection from textual uptime
-- ✅ Optional sensors — disconnected sensors stay silent
-
 ---
 
-## Wymagania / Requirements
+## Wymagania
 
 | Element | Wymaganie |
 |---|---|
@@ -81,7 +74,7 @@ tree that prevents alert storms.
 
 ---
 
-## Mapa OID / OID map
+## Mapa OID
 
 | Zakres OID | Zawartość |
 |---|---|
@@ -102,7 +95,7 @@ snmpwalk -v2c -c public 10.0.0.10 1.3.6.1.4.1.47394.7.1
 
 ---
 
-## Instalacja / Installation
+## Instalacja
 
 ### 1. Import szablonu
 
@@ -149,7 +142,7 @@ Po ~1 minucie powinny pojawić się dane fazy, po ~1 godzinie (lub po
 
 ---
 
-## Makra / Macros
+## Makra
 
 ### Dostępność i restart
 
@@ -228,7 +221,7 @@ Makra gniazd obsługują **kontekst numeryczny** = wartość `{#OUTLET_INDEX}`:
 
 ---
 
-## Metryki / Items
+## Metryki
 
 ### Urządzenie
 
@@ -278,7 +271,7 @@ Makra gniazd obsługują **kontekst numeryczny** = wartość `{#OUTLET_INDEX}`:
 
 ---
 
-## Discovery (LLD)
+## Wykrywanie gniazd (LLD)
 
 **Reguła:** `MSPDU: Outlet discovery` (`mspdu.outlet.discovery`)
 **Master item:** `mspdu.walk.outlet.names.raw`
@@ -313,18 +306,18 @@ nadaj mu nazwę w interfejsie WWW listwy.
 
 ---
 
-## Triggery / Triggers
+## Triggery
 
 ### Dostępność
 
-| Trigger | Severity |
+| Trigger | Waga |
 |---|---|
 | No SNMP data — PDU unreachable | 🔴 **HIGH** |
 | PDU has been restarted | 🟡 WARNING |
 
 ### Zasilanie
 
-| Trigger | Severity | Warunek |
+| Trigger | Waga | Warunek |
 |---|---|---|
 | Voltage critically low | 🔴 HIGH | `< 195 V` przez 5m |
 | Voltage critically high | 🔴 HIGH | `> 260 V` przez 3m |
@@ -336,7 +329,7 @@ nadaj mu nazwę w interfejsie WWW listwy.
 
 ### Obciążenie
 
-| Trigger | Severity | Warunek |
+| Trigger | Waga | Warunek |
 |---|---|---|
 | Phase 1 — OVERLOAD | 🔴 HIGH | `> 16 A` przez 3m |
 | Phase 1 — current above 80% | 🟡 WARNING | `> 12.8 A` przez 5m |
@@ -346,7 +339,7 @@ nadaj mu nazwę w interfejsie WWW listwy.
 
 ### Gniazda
 
-| Trigger | Severity |
+| Trigger | Waga |
 |---|---|
 | Outlet — SWITCHED OFF | 🟠 AVERAGE |
 | Outlet — no load while switched on | 🟡 WARNING |
@@ -356,7 +349,7 @@ nadaj mu nazwę w interfejsie WWW listwy.
 
 ### Środowisko
 
-| Trigger | Severity |
+| Trigger | Waga |
 |---|---|
 | Sensor 1/2 — temperature too high | 🟠 AVERAGE |
 | Sensor 1/2 — humidity too high | 🟠 AVERAGE |
@@ -365,14 +358,14 @@ nadaj mu nazwę w interfejsie WWW listwy.
 
 ### Zmiany konfiguracji
 
-| Trigger | Severity |
+| Trigger | Waga |
 |---|---|
 | Firmware version has changed | 🔵 INFO |
 | Device name has changed | 🔵 INFO |
 
 ---
 
-## Drzewo zależności / Dependency tree
+## Drzewo zależności
 
 ```
 No SNMP data — PDU unreachable                      [HIGH]
@@ -403,7 +396,7 @@ No SNMP data — PDU unreachable                      [HIGH]
 
 ---
 
-## Przepisy konfiguracyjne / Recipes
+## Przepisy konfiguracyjne
 
 ### 🔧 Listwa nie mierzy prądu per gniazdo (stale 0 A)
 
@@ -417,8 +410,6 @@ Na hoście:
 Wycisza wszystkie triggery prądowe i mocowe gniazd. Pozostaje monitoring
 stanu przełącznika, fazy i czujników.
 
----
-
 ### 🔧 Wyciszenie konkretnego gniazda (celowo wyłączone)
 
 ```
@@ -427,8 +418,6 @@ stanu przełącznika, fazy i czujników.
 
 Gniazdo 7 może być wyłączone bez generowania alarmu. Pozostałe gniazda
 działają normalnie.
-
----
 
 ### 🔧 Alarm o awarii zasilacza serwera
 
@@ -443,8 +432,6 @@ mimo stanu `ON`:
 > ⚠️ Działa tylko, jeśli listwa raportuje prąd per gniazdo. Przy stałym 0 A
 > **nie włączaj** tego makra — wygenerujesz fałszywe alarmy.
 
----
-
 ### 🔧 Listwa 32 A
 
 ```
@@ -453,15 +440,11 @@ mimo stanu `ON`:
 
 Progi 80% (25.6 A → WARNING) i 100% (32 A → HIGH) przeliczą się automatycznie.
 
----
-
 ### 🔧 Drugi czujnik podłączony
 
 ```
 {$MSPDU.SENSOR2.ENABLED} = 1
 ```
-
----
 
 ### 🔧 Serwerownia z restrykcyjną temperaturą
 
@@ -472,8 +455,6 @@ Progi 80% (25.6 A → WARNING) i 100% (32 A → HIGH) przeliczą się automatycz
 {$MSPDU.HUM.MIN}         = 40
 ```
 
----
-
 ### 🔧 Zasilanie z agregatu (niestabilna częstotliwość)
 
 ```
@@ -483,7 +464,7 @@ Progi 80% (25.6 A → WARNING) i 100% (32 A → HIGH) przeliczą się automatycz
 
 ---
 
-## Rozwiązywanie problemów / Troubleshooting
+## Rozwiązywanie problemów
 
 <details>
 <summary><b>LLD nie wykrywa gniazd</b></summary>
@@ -508,7 +489,7 @@ snmpwalk -v2c -c public 10.0.0.10 1.3.6.1.4.1.47394.7.1.8.1
 ```
 
 Jeśli wszystkie wartości to `0` lub `--` → sprzęt nie wspiera pomiaru per gniazdo.
-Zastosuj [przepis o wyłączeniu triggerów prądowych](#-listwa-nie-mierzy-prądu-per-gniazdo-stale-0-a).
+Zastosuj przepis [„Listwa nie mierzy prądu per gniazdo"](#-listwa-nie-mierzy-prądu-per-gniazdo-stale-0-a).
 </details>
 
 <details>
@@ -547,7 +528,7 @@ Zabbix 7.4 wymaga poprawnego **UUID v4**:
 - 13. znak = `4`
 - 17. znak ∈ `{8, 9, a, b}`
 
-Uruchom [skrypt walidacyjny](#walidacja-pliku--validation).
+Uruchom [skrypt walidacyjny](#walidacja-pliku).
 </details>
 
 <details>
@@ -557,14 +538,14 @@ Nie powinien wystąpić — triggery PF są aktywne dopiero powyżej progu obci�
 Jeśli występuje, podnieś próg:
 
 ```
-{$MSPDU.PF.CURRENT.MIN}     = 2      # faza
-{$MSPDU.OUTLET.PF.POWER.MIN} = 100   # gniazdo
+{$MSPDU.PF.CURRENT.MIN}      = 2      # faza
+{$MSPDU.OUTLET.PF.POWER.MIN} = 100    # gniazdo
 ```
 </details>
 
 ---
 
-## Walidacja pliku / Validation
+## Walidacja pliku
 
 ### Składnia YAML
 
@@ -596,7 +577,6 @@ grep -oP '(?<=uuid: )[0-9a-f]{32}' "$FILE" | while read -r u; do
     [[ ! "${u:16:1}" =~ [89ab] ]] && { echo "❌ $u — 17. znak != 8/9/a/b"; ERR=1; }
 done
 
-# duplikaty
 DUP=$(grep -oP '(?<=uuid: )[0-9a-f]{32}' "$FILE" | sort | uniq -d)
 [[ -n "$DUP" ]] && { echo "❌ Duplikaty UUID:"; echo "$DUP"; ERR=1; }
 
@@ -619,11 +599,11 @@ python3 -c "import uuid; print(uuid.uuid4().hex)"
 
 ---
 
-## FAQ
+## Najczęstsze pytania
 
 **Czy szablon obsługuje listwy 3-fazowe?**
 Obecnie nie — zaimplementowana jest faza 1. Rozszerzenie wymaga dodania itemów
-dla OID `...7.1.2.2.x.0` i `...7.1.2.3.x.0`. Zobacz [Roadmap](#roadmap).
+dla OID `...7.1.2.2.x.0` i `...7.1.2.3.x.0`. Zobacz [Plan rozwoju](#plan-rozwoju).
 
 **Czy mogę sterować gniazdami z Zabbiksa?**
 Nie. Szablon jest **read-only**. Sterowanie wymaga SNMP SET (`snmpset`) przez
@@ -649,7 +629,7 @@ Nie testowano.
 
 ---
 
-## Roadmap
+## Plan rozwoju
 
 - [ ] Wsparcie faz 2 i 3 (PDU 3-fazowe)
 - [ ] Dashboard / widgety
@@ -661,7 +641,7 @@ Nie testowano.
 
 ---
 
-## Contributing
+## Współtworzenie
 
 Pull requesty mile widziane. Przed zgłoszeniem:
 
@@ -671,7 +651,7 @@ Pull requesty mile widziane. Przed zgłoszeniem:
 4. Testuj na realnym sprzęcie, w PR podaj model i wersję firmware
 5. Zachowaj konwencję nazewnictwa `MSPDU: <obszar> - <metryka>`
 
-Zgłaszając bug, dołącz:
+Zgłaszając błąd, dołącz:
 
 ```bash
 snmpwalk -v2c -c public <IP> 1.3.6.1.4.1.47394.7.1 > walk.txt
@@ -681,44 +661,713 @@ snmpwalk -v2c -c public <IP> 1.3.6.1.4.1.47394.7.1 > walk.txt
 
 ---
 
-## Licencja / License
+## Licencja
 
-**PL:** Projekt udostępniony **bezpłatnie** na licencji [MIT](LICENSE).
+Projekt udostępniony **bezpłatnie** na licencji [MIT](LICENSE).
 Możesz go używać, kopiować, modyfikować i wdrażać — również **komercyjnie** —
 pod warunkiem zachowania informacji o prawach autorskich i treści licencji.
 Oprogramowanie dostarczane jest „**tak jak jest**", bez jakichkolwiek gwarancji.
 
-**EN:** Free and open source under the [MIT License](LICENSE).
-Free for personal **and commercial** use. You may use, copy, modify and
-redistribute it, provided the copyright notice is retained.
-Provided "**as is**", without warranty of any kind.
-
 ```
-MIT License · Copyright (c) 2025 <Sebastian Mentel>
+MIT License · Copyright (c) 2025 Sebastian Mentel
 ```
 
-### Zastrzeżenie / Disclaimer
+### Zastrzeżenie
 
-**PL:** Szablon **nieoficjalny**, nie jest powiązany z producentem urządzenia
+Szablon **nieoficjalny**, nie jest powiązany z producentem urządzenia
 ani przez niego wspierany. Nazwy **BKT**, **MSPDU** oraz **Zabbix** są znakami
 towarowymi ich właścicieli i zostały użyte wyłącznie w celach identyfikacyjnych.
 Autor nie ponosi odpowiedzialności za skutki działania szablonu w środowisku
 produkcyjnym, w tym za nietrafione alarmy lub ich brak.
 **Przetestuj przed wdrożeniem produkcyjnym.**
 
-**EN:** **Unofficial** template — not affiliated with, endorsed by, or supported
+### Podziękowania
+
+Szablon powstał na bazie analizy rzeczywistego `snmpwalk` z urządzenia
+BKT MSPDU (24 gniazda, 1 faza). Jeśli używasz go na innym modelu i działa —
+[daj znać w Issues](../../issues), dopiszemy do listy zgodności.
+
+<div align="center">
+
+**[⬆ Powrót na górę](#bkt-mspdu-pdu--zabbix-template-snmp)**  ·  **[🇬🇧 Read in English](#-english-version)**
+
+</div>
+
+---
+---
+
+# 🇬🇧 English version
+
+Zabbix 7.4 template for **BKT MSPDU** rack power distribution units — phase metrics,
+24 outlets via Low-Level Discovery, temperature and humidity sensors. A complete trigger
+dependency tree prevents alert storms during power loss.
+
+## Table of contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [OID map](#oid-map)
+- [Installation](#installation)
+- [Macros](#macros)
+- [Items](#items)
+- [Discovery (LLD)](#discovery-lld)
+- [Triggers](#triggers)
+- [Dependency tree](#dependency-tree)
+- [Configuration recipes](#configuration-recipes)
+- [Troubleshooting](#troubleshooting)
+- [Validation](#validation)
+- [FAQ](#faq)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## Features
+
+- ✅ **24-outlet LLD** — automatic discovery from the SNMP outlet-name `walk`
+- ✅ **Dependent items** — one SNMP walk feeds every outlet metric (minimal PDU load)
+- ✅ **Per-outlet power** — calculated as `I × U × PF`, rounded to whole watts
+- ✅ **No-load detection** — alerts when an outlet is `ON` but draws no power (PSU failure)
+- ✅ **Trigger dependency tree** — SNMP loss silences every other alert
+- ✅ **Hysteresis** — dedicated `recovery_expression` eliminates flapping
+- ✅ **Context-macro muting** — per outlet, no trigger editing required
+- ✅ **Reboot detection** — textual uptime parsed into seconds
+- ✅ **Optional sensors** — a disconnected sensor produces no false alarms
+
+---
+
+## Requirements
+
+| Item | Requirement |
+|---|---|
+| Zabbix Server / Proxy | **7.4** or newer (uses `walk[]` and UUID v4) |
+| Protocol | SNMP v1 / v2c (v3 if the PDU supports it) |
+| Port | UDP/161 |
+| Privileges | read-only community |
+| Host interface | **SNMP** (not Agent!) |
+
+> ⚠️ **Zabbix < 6.0 will not work** — the `walk[OID]` function was introduced in 6.0,
+> and the `version: '7.4'` export format cannot be imported into older releases.
+
+---
+
+## OID map
+
+| OID range | Contents |
+|---|---|
+| `...47394.7.1.1.x.0` | Device info (name, type, MAC, firmware, frequency, uptime, buzzer) |
+| `...47394.7.1.2.1.x.0` | Phase 1 — current, voltage, power, PF, energy |
+| `...47394.7.1.4.x.0` | Sensors — temperature 1/2, humidity 1/2 |
+| `...47394.7.1.5` | Outlet names *(LLD source)* |
+| `...47394.7.1.7` | Outlet switch state |
+| `...47394.7.1.8.1` | Outlet current |
+| `...47394.7.1.9` | Outlet power factor |
+| `...47394.7.1.10` | Outlet energy |
+
+**Verify before importing:**
+
+```bash
+snmpwalk -v2c -c public 10.0.0.10 1.3.6.1.4.1.47394.7.1
+```
+
+---
+
+## Installation
+
+### 1. Import the template
+
+```
+Data collection → Templates → Import → select the .yaml file → Import
+```
+
+This creates the template group **`Templates/BKT_Mentel`** and the template
+**`BKT MSPDU PDU by SNMP`**.
+
+### 2. Configure the host
+
+```
+Data collection → Hosts → Create host
+```
+
+| Field | Value |
+|---|---|
+| Host name | e.g. `pdu-rack-a01` |
+| Templates | `BKT MSPDU PDU by SNMP` |
+| Interfaces | **SNMP** → PDU IP address, port `161` |
+| SNMP version | SNMPv2 |
+| SNMP community | `{$SNMP_COMMUNITY}` |
+
+### 3. Set the community string
+
+In the host's **Macros** tab:
+
+```
+{$SNMP_COMMUNITY} = public
+```
+
+### 4. Verify
+
+```
+Monitoring → Latest data → filter by host
+```
+
+Phase data should appear within ~1 minute; outlets appear after ~1 hour
+(or immediately after `Execute now` on `MSPDU: RAW walk - outlet names`).
+
+> 💡 **Speed up LLD:** `Latest data` → select `MSPDU: RAW walk - outlet names`
+> → `Execute now`, then do the same for the discovery rule.
+
+---
+
+## Macros
+
+### Availability and restart
+
+| Macro | Default | Description |
+|---|---|---|
+| `{$MSPDU.NODATA}` | `10m` | No-data period before the unreachable alert fires |
+| `{$MSPDU.UPTIME.RESTART}` | `600` | Uptime below this value (s) after a counter drop = restart |
+
+### Voltage
+
+| Macro | Default | Description |
+|---|---|---|
+| `{$MSPDU.VOLTAGE.MIN.WARN}` | `207` | Low warning threshold (230 V −10%) |
+| `{$MSPDU.VOLTAGE.MIN.CRIT}` | `195` | Low critical threshold |
+| `{$MSPDU.VOLTAGE.MAX.WARN}` | `253` | High warning threshold (230 V +10%) |
+| `{$MSPDU.VOLTAGE.MAX.CRIT}` | `260` | High critical threshold |
+
+### Frequency and phase PF
+
+| Macro | Default | Description |
+|---|---|---|
+| `{$MSPDU.FREQ.MIN}` | `49` | Minimum frequency (Hz) |
+| `{$MSPDU.FREQ.MAX}` | `51` | Maximum frequency (Hz) |
+| `{$MSPDU.PF.MIN}` | `0.6` | Minimum phase power factor |
+| `{$MSPDU.PF.CURRENT.MIN}` | `1` | Below this current (A) PF is ignored |
+
+### Phase load
+
+| Macro | Default | Description |
+|---|---|---|
+| `{$MSPDU.PHASE.CURRENT.MAX}` | `16` | Rated input current (A). **80% = WARNING, 100% = HIGH** |
+
+### Outlets *(context-aware)*
+
+| Macro | Default | Description |
+|---|---|---|
+| `{$MSPDU.OUTLET.STATE.ON}` | `ON` | Value meaning "outlet energised" (item normalises to UPPERCASE) |
+| `{$MSPDU.OUTLET.OFF.ALERT}` | `1` | `0` = do not alert on a switched-off outlet |
+| `{$MSPDU.OUTLET.CURRENT.MAX}` | `16` | Max outlet current (A). **`0` = current triggers disabled** |
+| `{$MSPDU.OUTLET.POWER.MAX}` | `3000` | Max outlet power (W). `0` = disabled |
+| `{$MSPDU.OUTLET.POWER.MIN}` | `0` | Min expected power (W). **`0` = no-load detection DISABLED** |
+| `{$MSPDU.OUTLET.NOLOAD.PERIOD}` | `15m` | No-load evaluation window |
+| `{$MSPDU.OUTLET.PF.MIN}` | `0.6` | Minimum outlet power factor |
+| `{$MSPDU.OUTLET.PF.POWER.MIN}` | `50` | Below this power (W) outlet PF is ignored |
+
+### Environmental sensors
+
+| Macro | Default | Description |
+|---|---|---|
+| `{$MSPDU.OUTLET.TEMP.MAX}` | `35` | Max temperature (°C) |
+| `{$MSPDU.OUTLET.TEMP.MIN}` | `5` | Min temperature (°C) |
+| `{$MSPDU.OUTLET.HUM.MAX}` | `80` | Max humidity (%) |
+| `{$MSPDU.HUM.MIN}` | `20` | Min humidity (%) |
+| `{$MSPDU.SENSOR1.ENABLED}` | `1` | Sensor 1 connected (0/1) |
+| `{$MSPDU.SENSOR2.ENABLED}` | `0` | Sensor 2 connected (0/1) |
+
+### Macro priority
+
+```
+Host macro  >  Template macro  >  Global macro
+```
+
+**Never edit macros inside the template** — override them at host level.
+That way re-importing a new template version will not wipe your settings.
+
+### Context macros
+
+Outlet macros accept a **numeric context** equal to `{#OUTLET_INDEX}`:
+
+```
+{$MSPDU.OUTLET.POWER.MIN:"3"}    = 30      ← outlet #3
+{$MSPDU.OUTLET.OFF.ALERT:"17"}   = 0       ← outlet #17
+```
+
+> ⚠️ The context must be the **outlet number**, not its name. Quotes are mandatory.
+
+---
+
+## Items
+
+### Device
+
+| Name | Key | Interval |
+|---|---|---|
+| Device name | `mspdu.device.name` | 15m |
+| PDU type | `mspdu.device.type` | 15m |
+| Number of output ports | `mspdu.device.output.number` | 1h |
+| MAC address | `mspdu.device.mac` | 1h |
+| Firmware version | `mspdu.device.firmware` | 1h |
+| Frequency | `mspdu.device.frequency` | 5m |
+| Device uptime | `mspdu.device.uptime` | 5m |
+| Uptime (seconds) | `mspdu.device.uptime.sec` | *dependent* |
+| Buzzer switch | `mspdu.device.buzzer` | 15m |
+
+### Phase 1
+
+| Name | Key | Unit | Interval |
+|---|---|---|---|
+| Phase 1 — Current | `mspdu.phase1.current` | A | 1m |
+| Phase 1 — Voltage | `mspdu.phase1.voltage` | V | 1m |
+| Phase 1 — Power | `mspdu.phase1.power` | W | 1m |
+| Phase 1 — Power factor | `mspdu.phase1.pf` | — | 1m |
+| Phase 1 — Energy | `mspdu.phase1.energy` | kWh | 5m |
+
+> `mspdu.phase1.current` acts as the **availability indicator** — the `nodata()`
+> trigger is built on it, and every other trigger depends on that one.
+
+### Sensors
+
+| Name | Key | Unit |
+|---|---|---|
+| Sensor 1 — Temperature | `mspdu.sensor.temp1` | °C |
+| Sensor 2 — Temperature | `mspdu.sensor.temp2` | °C |
+| Sensor 1 — Humidity | `mspdu.sensor.hum1` | % |
+| Sensor 2 — Humidity | `mspdu.sensor.hum2` | % |
+
+### RAW walks *(master items, `history: 0`)*
+
+| Key | OID | Interval |
+|---|---|---|
+| `mspdu.walk.outlet.names.raw` | `...7.1.5` | 1h |
+| `mspdu.walk.outlet.switch.raw` | `...7.1.7` | 1m |
+| `mspdu.walk.outlet.current.raw` | `...7.1.8.1` | 1m |
+| `mspdu.walk.outlet.pf.raw` | `...7.1.9` | 1m |
+| `mspdu.walk.outlet.energy.raw` | `...7.1.10` | 5m |
+
+---
+
+## Discovery (LLD)
+
+**Rule:** `MSPDU: Outlet discovery` (`mspdu.outlet.discovery`)
+**Master item:** `mspdu.walk.outlet.names.raw`
+
+### LLD macros
+
+| Macro | Example |
+|---|---|
+| `{#OUTLET_INDEX}` | `1`, `2`, … `24` |
+| `{#OUTLET_NAME}` | `SRV-DB-01`, `Switch-Core` |
+
+### Filtering
+
+The JS preprocessing script skips outlets named `--` or empty, so **unused slots**
+never clutter your monitoring. To make an outlet appear in Zabbix, give it a name
+in the PDU's web interface.
+
+### Item prototypes
+
+| Name | Key | Type |
+|---|---|---|
+| Name | `mspdu.outlet.name[{#OUTLET_INDEX}]` | dependent |
+| Switch state | `mspdu.outlet.switch[{#OUTLET_INDEX}]` | dependent |
+| Current | `mspdu.outlet.current[{#OUTLET_INDEX}]` | dependent |
+| Power factor | `mspdu.outlet.pf[{#OUTLET_INDEX}]` | dependent |
+| **Power** | `mspdu.outlet.power.w[{#OUTLET_INDEX}]` | **calculated** |
+| Energy | `mspdu.outlet.energy[{#OUTLET_INDEX}]` | dependent |
+
+> 📐 **Outlet power is calculated**, not read from SNMP:
+> `last(current) × last(phase1.voltage) × last(pf)`, rounded to 1 W.
+> If the PDU does not meter current per outlet, the result is always **0 W**.
+
+---
+
+## Triggers
+
+### Availability
+
+| Trigger | Severity |
+|---|---|
+| No SNMP data — PDU unreachable | 🔴 **HIGH** |
+| PDU has been restarted | 🟡 WARNING |
+
+### Power quality
+
+| Trigger | Severity | Condition |
+|---|---|---|
+| Voltage critically low | 🔴 HIGH | `< 195 V` for 5m |
+| Voltage critically high | 🔴 HIGH | `> 260 V` for 3m |
+| Voltage below normal | 🟡 WARNING | `< 207 V` |
+| Voltage above normal | 🟡 WARNING | `> 253 V` |
+| Frequency below normal | 🟡 WARNING | `< 49 Hz` **and `> 0`** |
+| Frequency above normal | 🟡 WARNING | `> 51 Hz` |
+| Phase 1 — low power factor | 🔵 INFO | PF `< 0.6` **while current `> 1 A`** |
+
+### Load
+
+| Trigger | Severity | Condition |
+|---|---|---|
+| Phase 1 — OVERLOAD | 🔴 HIGH | `> 16 A` for 3m |
+| Phase 1 — current above 80% | 🟡 WARNING | `> 12.8 A` for 5m |
+| Outlet — current OVERLOAD | 🔴 HIGH | `> {$MSPDU.OUTLET.CURRENT.MAX}` |
+| Outlet — current > 80% | 🟡 WARNING | — |
+| Outlet — power above limit | 🟡 WARNING | `> {$MSPDU.OUTLET.POWER.MAX}` |
+
+### Outlets
+
+| Trigger | Severity |
+|---|---|
+| Outlet — SWITCHED OFF | 🟠 AVERAGE |
+| Outlet — no load while switched on | 🟡 WARNING |
+| Outlet — switch state changed | 🔵 INFO |
+| Outlet — energy counter has been reset | 🔵 INFO |
+| Outlet — low PF | 🔵 INFO |
+
+### Environment
+
+| Trigger | Severity |
+|---|---|
+| Sensor 1/2 — temperature too high | 🟠 AVERAGE |
+| Sensor 1/2 — humidity too high | 🟠 AVERAGE |
+| Sensor 1/2 — temperature too low | 🟡 WARNING |
+| Sensor 1/2 — humidity too low | 🟡 WARNING |
+
+### Configuration changes
+
+| Trigger | Severity |
+|---|---|
+| Firmware version has changed | 🔵 INFO |
+| Device name has changed | 🔵 INFO |
+
+---
+
+## Dependency tree
+
+```
+No SNMP data — PDU unreachable                      [HIGH]
+│
+├── Phase 1 — OVERLOAD                              [HIGH]
+│   └── Phase 1 — current above 80%                 [WARNING]
+│
+├── Voltage critically low                          [HIGH]
+│   └── Voltage below normal                        [WARNING]
+│
+├── Voltage critically high                         [HIGH]
+│   └── Voltage above normal                        [WARNING]
+│
+├── Frequency below / above normal                  [WARNING]
+├── Phase 1 — low power factor                      [INFO]
+│
+├── Outlet {N} — SWITCHED OFF                       [AVERAGE]
+│   └── Outlet {N} — no load while switched on      [WARNING]
+│
+├── Outlet {N} — current OVERLOAD                   [HIGH]
+│   └── Outlet {N} — current > 80% of limit         [WARNING]
+│
+├── Outlet {N} — power above limit                  [WARNING]
+└── Outlet {N} — low PF                             [INFO]
+```
+
+**Result:** a full PDU power loss generates **one** alert instead of 100+.
+
+---
+
+## Configuration recipes
+
+### 🔧 PDU does not meter current per outlet (constant 0 A)
+
+On the host:
+
+```
+{$MSPDU.OUTLET.CURRENT.MAX} = 0
+{$MSPDU.OUTLET.POWER.MAX}   = 0
+```
+
+This silences all outlet current and power triggers. Switch-state, phase
+and sensor monitoring remain active.
+
+### 🔧 Mute a specific outlet (intentionally switched off)
+
+```
+{$MSPDU.OUTLET.OFF.ALERT:"7"} = 0
+```
+
+Outlet 7 may stay off without raising an alert. All other outlets behave normally.
+
+### 🔧 Alert on a server PSU failure
+
+The server in outlet 3 normally draws ~120 W. Alert when it falls below 20 W
+while still reported as `ON`:
+
+```
+{$MSPDU.OUTLET.POWER.MIN:"3"}     = 20
+{$MSPDU.OUTLET.NOLOAD.PERIOD:"3"} = 10m
+```
+
+> ⚠️ Works only if the PDU reports per-outlet current. With a constant 0 A
+> **do not enable** this macro — you will generate false alarms.
+
+### 🔧 32 A PDU
+
+```
+{$MSPDU.PHASE.CURRENT.MAX} = 32
+```
+
+The 80% (25.6 A → WARNING) and 100% (32 A → HIGH) thresholds recalculate automatically.
+
+### 🔧 Second sensor connected
+
+```
+{$MSPDU.SENSOR2.ENABLED} = 1
+```
+
+### 🔧 Data centre with strict temperature limits
+
+```
+{$MSPDU.OUTLET.TEMP.MAX} = 27
+{$MSPDU.OUTLET.TEMP.MIN} = 18
+{$MSPDU.OUTLET.HUM.MAX}  = 60
+{$MSPDU.HUM.MIN}         = 40
+```
+
+### 🔧 Generator-backed supply (unstable frequency)
+
+```
+{$MSPDU.FREQ.MIN} = 47
+{$MSPDU.FREQ.MAX} = 53
+```
+
+---
+
+## Troubleshooting
+
+<details>
+<summary><b>LLD does not discover any outlets</b></summary>
+
+1. Check `MSPDU: RAW walk - outlet names` in `Latest data` — does it return data?
+2. Verify manually:
+   ```bash
+   snmpwalk -v2c -c public 10.0.0.10 1.3.6.1.4.1.47394.7.1.5
+   ```
+3. The format must match: `.5.<index>.0 = STRING: "name"`
+4. Outlets named `--` or empty are **intentionally skipped** — name them in the PDU web UI
+5. Force a run: `Execute now` on the master item, then on the discovery rule
+</details>
+
+<details>
+<summary><b>Outlet power always reads 0 W</b></summary>
+
+Power is **calculated** (`I × U × PF`). If any factor is 0, the result is 0.
+
+```bash
+snmpwalk -v2c -c public 10.0.0.10 1.3.6.1.4.1.47394.7.1.8.1
+```
+
+If every value is `0` or `--`, the hardware does not support per-outlet metering.
+Apply the [no per-outlet metering recipe](#-pdu-does-not-meter-current-per-outlet-constant-0-a).
+</details>
+
+<details>
+<summary><b>False "SWITCHED OFF" alerts</b></summary>
+
+The PDU may return `1`/`0` instead of `ON`/`OFF`. Check:
+
+```bash
+snmpget -v2c -c public 10.0.0.10 1.3.6.1.4.1.47394.7.1.7.2.0
+```
+
+If it returns `1`, set on the host:
+
+```
+{$MSPDU.OUTLET.STATE.ON} = 1
+```
+
+The item normalises the value to UPPERCASE, so `on`, `On`, `ON` all become `ON`.
+</details>
+
+<details>
+<summary><b>Temperature alerts with no sensor attached</b></summary>
+
+A disconnected sensor returns `0 °C`, which fires "temperature too low".
+
+```
+{$MSPDU.SENSOR2.ENABLED} = 0
+```
+</details>
+
+<details>
+<summary><b>Import error: "Invalid parameter /uuid"</b></summary>
+
+Zabbix 7.4 requires a valid **UUID v4**:
+- 32 hex characters, no dashes
+- 13th character = `4`
+- 17th character ∈ `{8, 9, a, b}`
+
+Run the [validation script](#validation).
+</details>
+
+<details>
+<summary><b>"Low power factor" alert with no load</b></summary>
+
+This should not happen — PF triggers only activate above a load threshold.
+If it does, raise the threshold:
+
+```
+{$MSPDU.PF.CURRENT.MIN}      = 2      # phase
+{$MSPDU.OUTLET.PF.POWER.MIN} = 100    # outlet
+```
+</details>
+
+---
+
+## Validation
+
+### YAML syntax
+
+```bash
+#!/usr/bin/env bash
+# check-yaml.sh
+FILE="${1:-template_bkt_mspdu.yaml}"
+
+python3 -c "
+import sys, yaml
+try:
+    yaml.safe_load(open('$FILE', encoding='utf-8'))
+    print('✅ YAML OK')
+except yaml.YAMLError as e:
+    print('❌ YAML ERROR:', e); sys.exit(1)
+"
+```
+
+### UUID v4 compliance
+
+```bash
+#!/usr/bin/env bash
+# check-uuid.sh
+FILE="${1:-template_bkt_mspdu.yaml}"
+ERR=0
+
+grep -oP '(?<=uuid: )[0-9a-f]{32}' "$FILE" | while read -r u; do
+    [[ "${u:12:1}" != "4" ]] && { echo "❌ $u — 13th char != 4"; ERR=1; }
+    [[ ! "${u:16:1}" =~ [89ab] ]] && { echo "❌ $u — 17th char != 8/9/a/b"; ERR=1; }
+done
+
+DUP=$(grep -oP '(?<=uuid: )[0-9a-f]{32}' "$FILE" | sort | uniq -d)
+[[ -n "$DUP" ]] && { echo "❌ Duplicate UUIDs:"; echo "$DUP"; ERR=1; }
+
+[[ $ERR -eq 0 ]] && echo "✅ UUID OK"
+```
+
+### Running the scripts
+
+```bash
+chmod +x check-yaml.sh check-uuid.sh
+./check-yaml.sh template_bkt_mspdu.yaml
+./check-uuid.sh template_bkt_mspdu.yaml
+```
+
+### Generating a new UUID v4
+
+```bash
+python3 -c "import uuid; print(uuid.uuid4().hex)"
+```
+
+---
+
+## FAQ
+
+**Does the template support three-phase PDUs?**
+Not yet — only phase 1 is implemented. Extending it requires items for OIDs
+`...7.1.2.2.x.0` and `...7.1.2.3.x.0`. See the [Roadmap](#roadmap).
+
+**Can I switch outlets on/off from Zabbix?**
+No. The template is **read-only**. Control requires SNMP SET (`snmpset`) via an
+external script or a Zabbix Script item — deliberately omitted for safety reasons.
+
+**Why is the template's technical name in Polish?**
+`template: 'SNMP Listwa MSPDU BKT'` appears in every trigger expression.
+The visible name (`name:`) is English. Renaming the technical identifier means
+editing ~60 places — scheduled for version 2.0.
+
+**Does the template load the PDU heavily?**
+Barely. Instead of ~150 individual SNMP queries it performs **5 walk operations**,
+from which dependent items extract every metric.
+
+**How do I update the template without losing my settings?**
+Always set macros **at host level**, never in the template. On re-import tick
+`Update existing` — host macros stay untouched.
+
+**Does it work with Zabbix 7.0?**
+The `version: '7.4'` export format will not import into 7.0. You can try changing
+the value to `7.0` — the underlying features (`walk[]`, dependent items, calculated
+items) are available there. Untested.
+
+---
+
+## Roadmap
+
+- [ ] Phase 2 and 3 support (three-phase PDUs)
+- [ ] Dashboard / widgets
+- [ ] Value mapping for switch state
+- [ ] English technical template name (v2.0, breaking change)
+- [ ] Per-outlet graph prototypes
+- [ ] SNMPv3 documentation
+- [ ] Submission to `zabbix/community-templates`
+
+---
+
+## Contributing
+
+Pull requests are welcome. Before submitting:
+
+1. Run both validation scripts — they must pass
+2. **Generate new UUIDs**, never copy existing ones
+3. Trigger names in `dependencies → name` must match trigger names **exactly**
+4. Test on real hardware; state the model and firmware version in the PR
+5. Follow the naming convention `MSPDU: <area> - <metric>`
+
+When reporting a bug, attach:
+
+```bash
+snmpwalk -v2c -c public <IP> 1.3.6.1.4.1.47394.7.1 > walk.txt
+```
+
+*(anonymise outlet names if they contain sensitive data)*
+
+---
+
+## License
+
+Released **free of charge** under the [MIT License](LICENSE).
+Free for personal **and commercial** use. You may use, copy, modify and
+redistribute it, provided the copyright notice and licence text are retained.
+Provided "**as is**", without warranty of any kind.
+
+```
+MIT License · Copyright (c) 2025 Sebastian Mentel
+```
+
+### Disclaimer
+
+**Unofficial** template — not affiliated with, endorsed by, or supported
 by the hardware vendor. **BKT**, **MSPDU** and **Zabbix** are trademarks of their
 respective owners, used here for identification purposes only. The author accepts
 no liability for any consequences of using this template in production, including
 false positives or missed alerts. **Test before production deployment.**
 
----
+### Credits
 
-## Podziękowania / Credits
+Built from an analysis of a real `snmpwalk` capture of a BKT MSPDU device
+(24 outlets, single phase). If you run it on a different model and it works —
+[let us know in Issues](../../issues) and we will add it to the compatibility list.
 
-Szablon powstał na bazie analizy rzeczywistego `snmpwalk` z urządzenia
-BKT MSPDU (24 gniazda, 1 faza). Jeśli używasz go na innym modelu i działa —
-[daj znać w Issues](../../issues), dopiszemy do listy zgodności.
+<div align="center">
+
+**[⬆ Back to top](#bkt-mspdu-pdu--zabbix-template-snmp)**  ·  **[🇵🇱 Czytaj po polsku](#-wersja-polska)**
+
+</div>
 
 ---
 
