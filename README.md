@@ -1,0 +1,1 @@
+# zabbix-template-bkt-mspdu
