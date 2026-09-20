@@ -1,0 +1,940 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates/BKT_Mentel
+  templates:
+    - uuid: 3f1b8a2c9d4e4b7a8c152e6f9a0b1c23
+      template: 'SNMP Listwa MSPDU BKT'
+      name: 'SNMP Listwa MSPDU'
+      description: |
+        Szablon SNMP dla listwy MSPDU (24 aktywne gniazda).
+        - LLD przez JS parsujacy raw walk nazw
+        - Dependent items: nazwa, prad, przelacznik, PF, energia
+        - Moc (W) obliczana: I x U x PF, zaokraglana do liczby calkowitej
+        Enterprise OID: 1.3.6.1.4.1.47394.7.1
+
+        UWAGA: jesli listwa nie mierzy pradu per gniazdo (stale 0 A),
+        ustaw {$MSPDU.OUTLET.CURRENT.MAX} = 0 aby wyciszyc triggery pradowe.
+      groups:
+        - name: Templates/BKT_Mentel
+      items:
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c08
+          name: 'MSPDU: Przelacznik buzera'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.1.9.0
+          key: mspdu.device.buzzer
+          delay: 15m
+          history: 7d
+          value_type: CHAR
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c05
+          name: 'MSPDU: Wersja oprogramowania'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.1.5.0
+          key: mspdu.device.firmware
+          delay: 1h
+          history: 30d
+          value_type: CHAR
+          triggers:
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b0b
+              expression: 'last(/SNMP Listwa MSPDU BKT/mspdu.device.firmware,#1)<>last(/SNMP Listwa MSPDU BKT/mspdu.device.firmware,#2) and length(last(/SNMP Listwa MSPDU BKT/mspdu.device.firmware))>0'
+              name: 'MSPDU: Zmieniono wersje oprogramowania'
+              event_name: 'MSPDU: Firmware zmieniony na {ITEM.VALUE1}'
+              priority: INFO
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: notice
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c06
+          name: 'MSPDU: Czestotliwosc'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.1.6.0
+          key: mspdu.device.frequency
+          delay: 5m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: Hz
+          triggers:
+            - uuid: d4e5f6a7b8c9401a8b3c4d5e6f701101
+              expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.device.frequency,10m)<{$MSPDU.FREQ.MIN} and min(/SNMP Listwa MSPDU BKT/mspdu.device.frequency,10m)>0'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.device.frequency,10m)>{$MSPDU.FREQ.MIN}+0.2'
+              name: 'MSPDU: Czestotliwosc ponizej normy (<{$MSPDU.FREQ.MIN} Hz)'
+              event_name: 'MSPDU: Czestotliwosc {ITEM.VALUE1} Hz'
+              priority: WARNING
+              description: 'Typowe przy pracy z agregatu lub niestabilnej sieci.'
+              tags:
+                - tag: scope
+                  value: power
+              dependencies:
+                - name: 'MSPDU: Brak danych SNMP - listwa nieosiagalna'
+                  expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+            - uuid: d4e5f6a7b8c9401a8b3c4d5e6f701102
+              expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.device.frequency,10m)>{$MSPDU.FREQ.MAX}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.device.frequency,10m)<{$MSPDU.FREQ.MAX}-0.2'
+              name: 'MSPDU: Czestotliwosc powyzej normy (>{$MSPDU.FREQ.MAX} Hz)'
+              event_name: 'MSPDU: Czestotliwosc {ITEM.VALUE1} Hz'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: power
+              dependencies:
+                - name: 'MSPDU: Brak danych SNMP - listwa nieosiagalna'
+                  expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c04
+          name: 'MSPDU: Adres MAC'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.1.4.0
+          key: mspdu.device.mac
+          delay: 1h
+          history: 30d
+          value_type: CHAR
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c01
+          name: 'MSPDU: Nazwa urzadzenia'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.1.1.0
+          key: mspdu.device.name
+          delay: 15m
+          history: 7d
+          value_type: CHAR
+          triggers:
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b0c
+              expression: 'last(/SNMP Listwa MSPDU BKT/mspdu.device.name,#1)<>last(/SNMP Listwa MSPDU BKT/mspdu.device.name,#2) and length(last(/SNMP Listwa MSPDU BKT/mspdu.device.name))>0'
+              name: 'MSPDU: Zmieniono nazwe urzadzenia'
+              priority: INFO
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: notice
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c03
+          name: 'MSPDU: Liczba portow wyjsciowych'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.1.3.0
+          key: mspdu.device.output.number
+          delay: 1h
+          history: 30d
+          trends: '0'
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c02
+          name: 'MSPDU: Typ listwy'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.1.2.0
+          key: mspdu.device.type
+          delay: 15m
+          history: 7d
+          value_type: CHAR
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c07
+          name: 'MSPDU: Czas pracy urzadzenia'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.1.8.0
+          key: mspdu.device.uptime
+          delay: 5m
+          history: 7d
+          value_type: CHAR
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2c09
+          name: 'MSPDU: Czas pracy (sekundy)'
+          type: DEPENDENT
+          key: mspdu.device.uptime.sec
+          history: 30d
+          units: uptime
+          description: 'Konwersja tekstowego uptime na sekundy - umozliwia wykrycie restartu listwy.'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var s = String(value).trim();
+                  var d = 0, h = 0, mi = 0, se = 0;
+                  var md = s.match(/(\d+)\s*(?:d|day|days|dni|dzien|dzie)/i);
+                  if (md) { d = parseInt(md[1], 10); }
+                  var mt = s.match(/(\d+)\s*:\s*(\d+)\s*:\s*(\d+)/);
+                  if (mt) {
+                      h = parseInt(mt[1], 10); mi = parseInt(mt[2], 10); se = parseInt(mt[3], 10);
+                  } else {
+                      var mh = s.match(/(\d+)\s*(?:h|hour|godz)/i); if (mh) h = parseInt(mh[1], 10);
+                      var mm = s.match(/(\d+)\s*(?:m|min)/i);        if (mm) mi = parseInt(mm[1], 10);
+                      var ms = s.match(/(\d+)\s*(?:s|sec)/i);        if (ms) se = parseInt(ms[1], 10);
+                  }
+                  var total = d * 86400 + h * 3600 + mi * 60 + se;
+                  if (total === 0 && /^\d+$/.test(s)) { total = parseInt(s, 10); }
+                  return total;
+          master_item:
+            key: mspdu.device.uptime
+          triggers:
+            - uuid: d4e5f6a7b8c9401a8b3c4d5e6f701103
+              expression: 'last(/SNMP Listwa MSPDU BKT/mspdu.device.uptime.sec)<last(/SNMP Listwa MSPDU BKT/mspdu.device.uptime.sec,#2) and last(/SNMP Listwa MSPDU BKT/mspdu.device.uptime.sec)<{$MSPDU.UPTIME.RESTART}'
+              name: 'MSPDU: Listwa zostala zrestartowana'
+              event_name: 'MSPDU: Restart listwy (uptime {ITEM.VALUE1})'
+              priority: WARNING
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: notice
+          tags:
+            - tag: component
+              value: device
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2d01
+          name: 'MSPDU: Liczba faz'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.2.0
+          key: mspdu.phase.count
+          delay: 1h
+          history: 30d
+          value_type: CHAR
+          tags:
+            - tag: component
+              value: phase
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2d11
+          name: 'MSPDU: Faza 1 - Prad'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.2.1.1.0
+          key: mspdu.phase1.current
+          delay: 1m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: A
+          triggers:
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b01
+              expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+              name: 'MSPDU: Brak danych SNMP - listwa nieosiagalna'
+              priority: HIGH
+              description: 'Brak odpowiedzi SNMP - utrata zasilania, sieci lub awaria kontrolera listwy.'
+              tags:
+                - tag: scope
+                  value: availability
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b03
+              expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,3m)>{$MSPDU.PHASE.CURRENT.MAX}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,5m)<{$MSPDU.PHASE.CURRENT.MAX}*0.9'
+              name: 'MSPDU: Faza 1 - PRZECIAZENIE (prad > {$MSPDU.PHASE.CURRENT.MAX}A)'
+              event_name: 'MSPDU: Faza 1 - przeciazenie ({ITEM.VALUE1} A)'
+              priority: HIGH
+              description: 'Ryzyko zadzialania zabezpieczenia nadpradowego listwy.'
+              tags:
+                - tag: scope
+                  value: capacity
+              dependencies:
+                - name: 'MSPDU: Brak danych SNMP - listwa nieosiagalna'
+                  expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b02
+              expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,5m)>{$MSPDU.PHASE.CURRENT.MAX}*0.8'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,5m)<{$MSPDU.PHASE.CURRENT.MAX}*0.75'
+              name: 'MSPDU: Faza 1 - prad powyzej 80% '
+              event_name: 'MSPDU: Faza 1 - wysokie obciazenie ({ITEM.VALUE1} A)'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: capacity
+              dependencies:
+                - name: 'MSPDU: Faza 1 - PRZECIAZENIE (prad > {$MSPDU.PHASE.CURRENT.MAX}A)'
+                  expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,3m)>{$MSPDU.PHASE.CURRENT.MAX}'
+                  recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,5m)<{$MSPDU.PHASE.CURRENT.MAX}*0.9'
+                - name: 'MSPDU: Brak danych SNMP - listwa nieosiagalna'
+                  expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+          tags:
+            - tag: component
+              value: phase1
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2d15
+          name: 'MSPDU: Faza 1 - Energia'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.2.1.5.0
+          key: mspdu.phase1.energy
+          delay: 5m
+          history: 30d
+          value_type: FLOAT
+          units: kWh
+          tags:
+            - tag: component
+              value: phase1
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2d14
+          name: 'MSPDU: Faza 1 - Wspolczynnik mocy'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.2.1.4.0
+          key: mspdu.phase1.pf
+          delay: 1m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          triggers:
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b09
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.phase1.pf,15m)<{$MSPDU.PF.MIN} and min(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,15m)>{$MSPDU.PF.CURRENT.MIN}'
+              name: 'MSPDU: Faza 1 - niski wspolczynnik mocy (<{$MSPDU.PF.MIN})'
+              priority: INFO
+              manual_close: 'YES'
+              description: 'PF oceniany tylko przy pradzie > {$MSPDU.PF.CURRENT.MIN} A - bez obciazenia PF=0 jest normalne.'
+              tags:
+                - tag: scope
+                  value: power
+              dependencies:
+                - name: 'MSPDU: Brak danych SNMP - listwa nieosiagalna'
+                  expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+          tags:
+            - tag: component
+              value: phase1
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2d13
+          name: 'MSPDU: Faza 1 - Moc'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.2.1.3.0
+          key: mspdu.phase1.power
+          delay: 1m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: W
+          tags:
+            - tag: component
+              value: phase1
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2d12
+          name: 'MSPDU: Faza 1 - Napiecie'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.2.1.2.0
+          key: mspdu.phase1.voltage
+          delay: 1m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: V
+          triggers:
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b04
+              expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.phase1.voltage,5m)<{$MSPDU.VOLTAGE.MIN.CRIT}'
+              name: 'MSPDU: Napiecie krytycznie niskie (<{$MSPDU.VOLTAGE.MIN.CRIT}V)'
+              event_name: 'MSPDU: Napiecie {ITEM.VALUE1} V'
+              priority: HIGH
+              tags:
+                - tag: scope
+                  value: power
+              dependencies:
+                - name: 'MSPDU: Brak danych SNMP - listwa nieosiagalna'
+                  expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b05
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.phase1.voltage,5m)<{$MSPDU.VOLTAGE.MIN.WARN}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.phase1.voltage,5m)>{$MSPDU.VOLTAGE.MIN.WARN}+3'
+              name: 'MSPDU: Napiecie ponizej normy (<{$MSPDU.VOLTAGE.MIN.WARN}V)'
+              event_name: 'MSPDU: Napiecie {ITEM.VALUE1} V'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: power
+              dependencies:
+                - name: 'MSPDU: Napiecie krytycznie niskie (<{$MSPDU.VOLTAGE.MIN.CRIT}V)'
+                  expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.phase1.voltage,5m)<{$MSPDU.VOLTAGE.MIN.CRIT}'
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b07
+              expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.phase1.voltage,3m)>{$MSPDU.VOLTAGE.MAX.CRIT}'
+              name: 'MSPDU: Napiecie krytycznie wysokie (>{$MSPDU.VOLTAGE.MAX.CRIT}V)'
+              event_name: 'MSPDU: Napiecie {ITEM.VALUE1} V'
+              priority: HIGH
+              description: 'Ryzyko uszkodzenia zasilaczy urzadzen w szafie.'
+              tags:
+                - tag: scope
+                  value: power
+              dependencies:
+                - name: 'MSPDU: Brak danych SNMP - listwa nieosiagalna'
+                  expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+            - uuid: a1f0c2b34d5e4f6a8b9c0d1e2f3a4b06
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.phase1.voltage,5m)>{$MSPDU.VOLTAGE.MAX.WARN}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.phase1.voltage,5m)<{$MSPDU.VOLTAGE.MAX.WARN}-3'
+              name: 'MSPDU: Napiecie powyzej normy (>{$MSPDU.VOLTAGE.MAX.WARN}V)'
+              event_name: 'MSPDU: Napiecie {ITEM.VALUE1} V'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: power
+              dependencies:
+                - name: 'MSPDU: Napiecie krytycznie wysokie (>{$MSPDU.VOLTAGE.MAX.CRIT}V)'
+                  expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.phase1.voltage,3m)>{$MSPDU.VOLTAGE.MAX.CRIT}'
+          tags:
+            - tag: component
+              value: phase1
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2e01
+          name: 'MSPDU: Czujnik 1 - Temperatura'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.4.1.0
+          key: mspdu.sensor.temp1
+          delay: 1m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: °C
+          triggers:
+            - uuid: c3a17f402b6d4e9d8a5b1c7e9f204a01
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.sensor.temp1,5m)>{$MSPDU.OUTLET.TEMP.MAX} and {$MSPDU.SENSOR1.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.sensor.temp1,5m)<{$MSPDU.OUTLET.TEMP.MAX}-2'
+              name: 'MSPDU: Czujnik 1 - temperatura za wysoka (>{$MSPDU.OUTLET.TEMP.MAX}C)'
+              event_name: 'MSPDU: Czujnik 1 - {ITEM.VALUE1} C'
+              priority: AVERAGE
+              tags:
+                - tag: scope
+                  value: temperature
+            - uuid: c3a17f402b6d4e9d8a5b1c7e9f204a02
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.sensor.temp1,5m)<{$MSPDU.OUTLET.TEMP.MIN} and {$MSPDU.SENSOR1.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.sensor.temp1,5m)>{$MSPDU.OUTLET.TEMP.MIN}+2'
+              name: 'MSPDU: Czujnik 1 - temperatura za niska (<{$MSPDU.OUTLET.TEMP.MIN}C)'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: temperature
+          tags:
+            - tag: component
+              value: sensor1
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2e02
+          name: 'MSPDU: Czujnik 2 - Temperatura'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.4.2.0
+          key: mspdu.sensor.temp2
+          delay: 1m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: °C
+          triggers:
+            - uuid: c3a17f402b6d4e9d8a5b1c7e9f204a03
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.sensor.temp2,5m)>{$MSPDU.OUTLET.TEMP.MAX} and {$MSPDU.SENSOR2.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.sensor.temp2,5m)<{$MSPDU.OUTLET.TEMP.MAX}-2'
+              name: 'MSPDU: Czujnik 2 - temperatura za wysoka (>{$MSPDU.OUTLET.TEMP.MAX}C)'
+              event_name: 'MSPDU: Czujnik 2 - {ITEM.VALUE1} C'
+              priority: AVERAGE
+              tags:
+                - tag: scope
+                  value: temperature
+            - uuid: c3a17f402b6d4e9d8a5b1c7e9f204a04
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.sensor.temp2,5m)<{$MSPDU.OUTLET.TEMP.MIN} and {$MSPDU.SENSOR2.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.sensor.temp2,5m)>{$MSPDU.OUTLET.TEMP.MIN}+2'
+              name: 'MSPDU: Czujnik 2 - temperatura za niska (<{$MSPDU.OUTLET.TEMP.MIN}C)'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: temperature
+          tags:
+            - tag: component
+              value: sensor2
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2e03
+          name: 'MSPDU: Czujnik 1 - Wilgotnosc'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.4.3.0
+          key: mspdu.sensor.hum1
+          delay: 1m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: '%'
+          triggers:
+            - uuid: c3a17f402b6d4e9d8a5b1c7e9f204a05
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.sensor.hum1,10m)>{$MSPDU.OUTLET.HUM.MAX} and {$MSPDU.SENSOR1.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.sensor.hum1,10m)<{$MSPDU.OUTLET.HUM.MAX}-5'
+              name: 'MSPDU: Czujnik 1 - wilgotnosc za wysoka (>{$MSPDU.OUTLET.HUM.MAX}%)'
+              event_name: 'MSPDU: Czujnik 1 - wilgotnosc {ITEM.VALUE1}%'
+              priority: AVERAGE
+              tags:
+                - tag: scope
+                  value: humidity
+            - uuid: c3a17f402b6d4e9d8a5b1c7e9f204a06
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.sensor.hum1,10m)<{$MSPDU.HUM.MIN} and {$MSPDU.SENSOR1.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.sensor.hum1,10m)>{$MSPDU.HUM.MIN}+5'
+              name: 'MSPDU: Czujnik 1 - wilgotnosc za niska (<{$MSPDU.HUM.MIN}%)'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: humidity
+          tags:
+            - tag: component
+              value: sensor1
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2e04
+          name: 'MSPDU: Czujnik 2 - Wilgotnosc'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.47394.7.1.4.4.0
+          key: mspdu.sensor.hum2
+          delay: 1m
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: '%'
+          triggers:
+            - uuid: c3a17f402b6d4e9d8a5b1c7e9f204a07
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.sensor.hum2,10m)>{$MSPDU.OUTLET.HUM.MAX} and {$MSPDU.SENSOR2.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.sensor.hum2,10m)<{$MSPDU.OUTLET.HUM.MAX}-5'
+              name: 'MSPDU: Czujnik 2 - wilgotnosc za wysoka (>{$MSPDU.OUTLET.HUM.MAX}%)'
+              event_name: 'MSPDU: Czujnik 2 - wilgotnosc {ITEM.VALUE1}%'
+              priority: AVERAGE
+              tags:
+                - tag: scope
+                  value: humidity
+            - uuid: c3a17f402b6d4e9d8a5b1c7e9f204a08
+              expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.sensor.hum2,10m)<{$MSPDU.HUM.MIN} and {$MSPDU.SENSOR2.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.sensor.hum2,10m)>{$MSPDU.HUM.MIN}+5'
+              name: 'MSPDU: Czujnik 2 - wilgotnosc za niska (<{$MSPDU.HUM.MIN}%)'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: humidity
+          tags:
+            - tag: component
+              value: sensor2
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2f02
+          name: 'MSPDU: RAW walk - prad gniazdek'
+          type: SNMP_AGENT
+          snmp_oid: 'walk[1.3.6.1.4.1.47394.7.1.8.1]'
+          key: mspdu.walk.outlet.current.raw
+          delay: 1m
+          history: '0'
+          value_type: TEXT
+          tags:
+            - tag: component
+              value: walk
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2f12
+          name: 'MSPDU: RAW walk - energia gniazdek'
+          type: SNMP_AGENT
+          snmp_oid: 'walk[1.3.6.1.4.1.47394.7.1.10]'
+          key: mspdu.walk.outlet.energy.raw
+          delay: 5m
+          history: '0'
+          value_type: TEXT
+          tags:
+            - tag: component
+              value: walk
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2f01
+          name: 'MSPDU: RAW walk - nazwy gniazdek'
+          type: SNMP_AGENT
+          snmp_oid: 'walk[1.3.6.1.4.1.47394.7.1.5]'
+          key: mspdu.walk.outlet.names.raw
+          delay: 1h
+          history: '0'
+          value_type: TEXT
+          tags:
+            - tag: component
+              value: walk
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2f11
+          name: 'MSPDU: RAW walk - wspolczynnik mocy gniazdek'
+          type: SNMP_AGENT
+          snmp_oid: 'walk[1.3.6.1.4.1.47394.7.1.9]'
+          key: mspdu.walk.outlet.pf.raw
+          delay: 1m
+          history: '0'
+          value_type: TEXT
+          tags:
+            - tag: component
+              value: walk
+        - uuid: 0a1b2c3d4e5f4a6b9c7d8e9f0a1b2f07
+          name: 'MSPDU: RAW walk - stan przelacznika gniazdek'
+          type: SNMP_AGENT
+          snmp_oid: 'walk[1.3.6.1.4.1.47394.7.1.7]'
+          key: mspdu.walk.outlet.switch.raw
+          delay: 1m
+          history: '0'
+          value_type: TEXT
+          tags:
+            - tag: component
+              value: walk
+      discovery_rules:
+        - uuid: 1b2c3d4e5f6a4b7c9d8e9f0a1b2c3d01
+          name: 'MSPDU: Wykrywanie gniazdek'
+          type: DEPENDENT
+          key: mspdu.outlet.discovery
+          description: 'LLD gniazdek; makra: {#OUTLET_INDEX}, {#OUTLET_NAME}'
+          master_item:
+            key: mspdu.walk.outlet.names.raw
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var lines = value.split('\n');
+                  var re = /\.5\.(\d+)\.0\s*=\s*STRING:\s*"([^"]*)"/;
+                  var result = [];
+                  var seen = {};
+                  for (var i = 0; i < lines.length; i++) {
+                      var m = lines[i].match(re);
+                      if (m) {
+                          var idx = m[1];
+                          var nm = m[2];
+                          if (nm === '--' || nm === '') continue;
+                          if (seen[idx]) continue;
+                          seen[idx] = true;
+                          result.push({
+                              "{#OUTLET_INDEX}": idx,
+                              "{#OUTLET_NAME}": nm
+                          });
+                      }
+                  }
+                  return JSON.stringify(result);
+          item_prototypes:
+            - uuid: 2c3d4e5f6a7b4c8d9e0f1a2b3c4d5e01
+              name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - Nazwa'
+              type: DEPENDENT
+              key: 'mspdu.outlet.name[{#OUTLET_INDEX}]'
+              history: 30d
+              value_type: CHAR
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var lines = value.split('\n');
+                      var idx = '{#OUTLET_INDEX}';
+                      var re = new RegExp('\\.5\\.' + idx + '\\.0\\s*=\\s*STRING:\\s*"([^"]*)"');
+                      for (var i = 0; i < lines.length; i++) {
+                          var m = lines[i].match(re);
+                          if (m) return m[1];
+                      }
+                      return '';
+              master_item:
+                key: mspdu.walk.outlet.names.raw
+              tags:
+                - tag: component
+                  value: outlet
+                - tag: outlet
+                  value: '{#OUTLET_INDEX}'
+            - uuid: 2c3d4e5f6a7b4c8d9e0f1a2b3c4d5e09
+              name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - Przelacznik'
+              type: DEPENDENT
+              key: 'mspdu.outlet.switch[{#OUTLET_INDEX}]'
+              history: 7d
+              value_type: CHAR
+              description: 'Wartosc normalizowana do wielkich liter (ON/OFF).'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var lines = value.split('\n');
+                      var idx = '{#OUTLET_INDEX}';
+                      var re = new RegExp('\\.7\\.' + idx + '\\.0\\s*=\\s*STRING:\\s*"([^"]*)"');
+                      for (var i = 0; i < lines.length; i++) {
+                          var m = lines[i].match(re);
+                          if (m) return m[1].trim().toUpperCase();
+                      }
+                      return '';
+              master_item:
+                key: mspdu.walk.outlet.switch.raw
+              trigger_prototypes:
+                - uuid: b2e1d3c45f6a4b7c8d9e0f1a2b3c4d01
+                  expression: 'last(/SNMP Listwa MSPDU BKT/mspdu.outlet.switch[{#OUTLET_INDEX}])<>"{$MSPDU.OUTLET.STATE.ON}" and length(last(/SNMP Listwa MSPDU BKT/mspdu.outlet.switch[{#OUTLET_INDEX}]))>0 and {$MSPDU.OUTLET.OFF.ALERT:"{#OUTLET_INDEX}"}=1'
+                  name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - WYLACZONE'
+                  event_name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) jest wylaczone ({ITEM.VALUE1})'
+                  priority: AVERAGE
+                  description: 'Aby wyciszyc konkretne gniazdo ustaw {$MSPDU.OUTLET.OFF.ALERT:"{#OUTLET_INDEX}"} = 0.'
+                  tags:
+                    - tag: scope
+                      value: availability
+                  dependencies:
+                    - name: 'MSPDU: Brak danych SNMP - listwa nieosiagalna'
+                      expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+                - uuid: b2e1d3c45f6a4b7c8d9e0f1a2b3c4d02
+                  expression: 'last(/SNMP Listwa MSPDU BKT/mspdu.outlet.switch[{#OUTLET_INDEX}],#1)<>last(/SNMP Listwa MSPDU BKT/mspdu.outlet.switch[{#OUTLET_INDEX}],#2) and length(last(/SNMP Listwa MSPDU BKT/mspdu.outlet.switch[{#OUTLET_INDEX}]))>0'
+                  name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - zmiana stanu przelacznika'
+                  event_name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) -> {ITEM.VALUE1}'
+                  priority: INFO
+                  manual_close: 'YES'
+                  tags:
+                    - tag: scope
+                      value: notice
+              tags:
+                - tag: component
+                  value: outlet
+                - tag: outlet
+                  value: '{#OUTLET_INDEX}'
+            - uuid: 2c3d4e5f6a7b4c8d9e0f1a2b3c4d5e02
+              name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - Prad'
+              type: DEPENDENT
+              key: 'mspdu.outlet.current[{#OUTLET_INDEX}]'
+              history: 7d
+              value_type: FLOAT
+              trends: 90d
+              units: A
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var lines = value.split('\n');
+                      var idx = '{#OUTLET_INDEX}';
+                      var re = new RegExp('\\.8\\.1\\.' + idx + '\\.0\\s*=\\s*STRING:\\s*"([^"]*)"');
+                      for (var i = 0; i < lines.length; i++) {
+                          var m = lines[i].match(re);
+                          if (m) {
+                              if (m[1] === '--') return 0;
+                              var v = parseFloat(m[1]);
+                              return isNaN(v) ? 0 : v;
+                          }
+                      }
+                      return 0;
+              master_item:
+                key: mspdu.walk.outlet.current.raw
+              trigger_prototypes:
+                - uuid: b2e1d3c45f6a4b7c8d9e0f1a2b3c4d04
+                  expression: '{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}>0 and min(/SNMP Listwa MSPDU BKT/mspdu.outlet.current[{#OUTLET_INDEX}],3m)>{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.outlet.current[{#OUTLET_INDEX}],5m)<{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}*0.9'
+                  name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - PRZECIAZENIE pradowe'
+                  event_name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - {ITEM.VALUE1} A'
+                  priority: HIGH
+                  tags:
+                    - tag: scope
+                      value: capacity
+                  dependencies:
+                    - name: 'MSPDU: Brak danych SNMP - listwa nieosiagalna'
+                      expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+                - uuid: b2e1d3c45f6a4b7c8d9e0f1a2b3c4d03
+                  expression: '{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}>0 and min(/SNMP Listwa MSPDU BKT/mspdu.outlet.current[{#OUTLET_INDEX}],5m)>{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}*0.8'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.outlet.current[{#OUTLET_INDEX}],5m)<{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}*0.75'
+                  name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - prad > 80% limitu'
+                  event_name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - {ITEM.VALUE1} A'
+                  priority: WARNING
+                  tags:
+                    - tag: scope
+                      value: capacity
+                  dependencies:
+                    - name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - PRZECIAZENIE pradowe'
+                      expression: '{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}>0 and min(/SNMP Listwa MSPDU BKT/mspdu.outlet.current[{#OUTLET_INDEX}],3m)>{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}'
+                      recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.outlet.current[{#OUTLET_INDEX}],5m)<{$MSPDU.OUTLET.CURRENT.MAX:"{#OUTLET_INDEX}"}*0.9'
+                    - name: 'MSPDU: Brak danych SNMP - listwa nieosiagalna'
+                      expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+              tags:
+                - tag: component
+                  value: outlet
+                - tag: outlet
+                  value: '{#OUTLET_INDEX}'
+            - uuid: 2c3d4e5f6a7b4c8d9e0f1a2b3c4d5e07
+              name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - Wspolczynnik mocy'
+              type: DEPENDENT
+              key: 'mspdu.outlet.pf[{#OUTLET_INDEX}]'
+              history: 7d
+              value_type: FLOAT
+              trends: 90d
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var lines = value.split('\n');
+                      var idx = '{#OUTLET_INDEX}';
+                      var re = new RegExp('\\.9\\.' + idx + '\\.0\\s*=\\s*STRING:\\s*"([^"]*)"');
+                      for (var i = 0; i < lines.length; i++) {
+                          var m = lines[i].match(re);
+                          if (m) {
+                              if (m[1] === '--') return 0;
+                              var v = parseFloat(m[1]);
+                              return isNaN(v) ? 0 : v;
+                          }
+                      }
+                      return 0;
+              master_item:
+                key: mspdu.walk.outlet.pf.raw
+              trigger_prototypes:
+                - uuid: b2e1d3c45f6a4b7c8d9e0f1a2b3c4d08
+                  expression: 'avg(/SNMP Listwa MSPDU BKT/mspdu.outlet.pf[{#OUTLET_INDEX}],15m)<{$MSPDU.OUTLET.PF.MIN} and min(/SNMP Listwa MSPDU BKT/mspdu.outlet.power.w[{#OUTLET_INDEX}],15m)>{$MSPDU.OUTLET.PF.POWER.MIN}'
+                  name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - niski PF (<{$MSPDU.OUTLET.PF.MIN})'
+                  priority: INFO
+                  manual_close: 'YES'
+                  description: 'Oceniane tylko przy mocy > {$MSPDU.OUTLET.PF.POWER.MIN} W - bez obciazenia PF=0 jest normalne.'
+                  tags:
+                    - tag: scope
+                      value: power
+                  dependencies:
+                    - name: 'MSPDU: Brak danych SNMP - listwa nieosiagalna'
+                      expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+              tags:
+                - tag: component
+                  value: outlet
+                - tag: outlet
+                  value: '{#OUTLET_INDEX}'
+            - uuid: 2c3d4e5f6a7b4c8d9e0f1a2b3c4d5e13
+              name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - Moc'
+              type: CALCULATED
+              key: 'mspdu.outlet.power.w[{#OUTLET_INDEX}]'
+              delay: 1m
+              history: 7d
+              value_type: FLOAT
+              trends: 90d
+              units: W
+              params: 'last(//mspdu.outlet.current[{#OUTLET_INDEX}]) * last(//mspdu.phase1.voltage) * last(//mspdu.outlet.pf[{#OUTLET_INDEX}])'
+              description: |
+                Moc chwilowa gniazda {#OUTLET_INDEX} = Prad x Napiecie x PF, zaokraglona do W.
+                UWAGA: jesli listwa nie raportuje pradu per gniazdo, ta wartosc bedzie stale 0.
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var v = parseFloat(value);
+                      if (isNaN(v)) return 0;
+                      return Math.round(v);
+              trigger_prototypes:
+                - uuid: b2e1d3c45f6a4b7c8d9e0f1a2b3c4d06
+                  expression: '{$MSPDU.OUTLET.POWER.MAX:"{#OUTLET_INDEX}"}>0 and min(/SNMP Listwa MSPDU BKT/mspdu.outlet.power.w[{#OUTLET_INDEX}],5m)>{$MSPDU.OUTLET.POWER.MAX:"{#OUTLET_INDEX}"}'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'max(/SNMP Listwa MSPDU BKT/mspdu.outlet.power.w[{#OUTLET_INDEX}],5m)<{$MSPDU.OUTLET.POWER.MAX:"{#OUTLET_INDEX}"}*0.9'
+                  name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - moc powyzej limitu'
+                  event_name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - {ITEM.VALUE1} W'
+                  priority: WARNING
+                  tags:
+                    - tag: scope
+                      value: capacity
+                  dependencies:
+                    - name: 'MSPDU: Brak danych SNMP - listwa nieosiagalna'
+                      expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+                - uuid: b2e1d3c45f6a4b7c8d9e0f1a2b3c4d09
+                  expression: '{$MSPDU.OUTLET.POWER.MIN:"{#OUTLET_INDEX}"}>0 and max(/SNMP Listwa MSPDU BKT/mspdu.outlet.power.w[{#OUTLET_INDEX}],{$MSPDU.OUTLET.NOLOAD.PERIOD:"{#OUTLET_INDEX}"})<{$MSPDU.OUTLET.POWER.MIN:"{#OUTLET_INDEX}"} and last(/SNMP Listwa MSPDU BKT/mspdu.outlet.switch[{#OUTLET_INDEX}])="{$MSPDU.OUTLET.STATE.ON}"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'min(/SNMP Listwa MSPDU BKT/mspdu.outlet.power.w[{#OUTLET_INDEX}],5m)>={$MSPDU.OUTLET.POWER.MIN:"{#OUTLET_INDEX}"}'
+                  name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - brak obciazenia mimo zalaczenia'
+                  event_name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - {ITEM.VALUE1} W przy stanie ON'
+                  priority: WARNING
+                  description: |
+                    Prawdopodobna awaria zasilacza lub odlaczenie urzadzenia.
+                    Wlacz per gniazdo: {$MSPDU.OUTLET.POWER.MIN:"{#OUTLET_INDEX}"} = np. 20 (W).
+                    Wartosc 0 = trigger nieaktywny.
+                  tags:
+                    - tag: scope
+                      value: availability
+                  dependencies:
+                    - name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - WYLACZONE'
+                      expression: 'last(/SNMP Listwa MSPDU BKT/mspdu.outlet.switch[{#OUTLET_INDEX}])<>"{$MSPDU.OUTLET.STATE.ON}" and length(last(/SNMP Listwa MSPDU BKT/mspdu.outlet.switch[{#OUTLET_INDEX}]))>0 and {$MSPDU.OUTLET.OFF.ALERT:"{#OUTLET_INDEX}"}=1'
+                    - name: 'MSPDU: Brak danych SNMP - listwa nieosiagalna'
+                      expression: 'nodata(/SNMP Listwa MSPDU BKT/mspdu.phase1.current,{$MSPDU.NODATA})=1'
+              tags:
+                - tag: component
+                  value: outlet
+                - tag: outlet
+                  value: '{#OUTLET_INDEX}'
+            - uuid: 2c3d4e5f6a7b4c8d9e0f1a2b3c4d5e12
+              name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - Energia'
+              type: DEPENDENT
+              key: 'mspdu.outlet.energy[{#OUTLET_INDEX}]'
+              history: 30d
+              value_type: FLOAT
+              units: kWh
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var lines = value.split('\n');
+                      var idx = '{#OUTLET_INDEX}';
+                      var re = new RegExp('\\.10\\.' + idx + '\\.0\\s*=\\s*STRING:\\s*"([^"]*)"');
+                      for (var i = 0; i < lines.length; i++) {
+                          var m = lines[i].match(re);
+                          if (m) {
+                              if (m[1] === '--') return 0;
+                              var v = parseFloat(m[1]);
+                              return isNaN(v) ? 0 : v;
+                          }
+                      }
+                      return 0;
+              master_item:
+                key: mspdu.walk.outlet.energy.raw
+              trigger_prototypes:
+                - uuid: b2e1d3c45f6a4b7c8d9e0f1a2b3c4d07
+                  expression: 'change(/SNMP Listwa MSPDU BKT/mspdu.outlet.energy[{#OUTLET_INDEX}])<0'
+                  name: 'MSPDU: Gniazdo {#OUTLET_INDEX} ({#OUTLET_NAME}) - licznik energii wyzerowany'
+                  priority: INFO
+                  manual_close: 'YES'
+                  tags:
+                    - tag: scope
+                      value: notice
+              tags:
+                - tag: component
+                  value: outlet
+                - tag: outlet
+                  value: '{#OUTLET_INDEX}'
+      macros:
+        - macro: '{$MSPDU.NODATA}'
+          value: 10m
+          description: 'Czas braku danych, po ktorym alarm o nieosiagalnosci.'
+        - macro: '{$MSPDU.UPTIME.RESTART}'
+          value: '600'
+          description: 'Uptime ponizej tej wartosci (s) po spadku licznika = restart listwy.'
+        - macro: '{$MSPDU.VOLTAGE.MIN.WARN}'
+          value: '207'
+          description: 'Napiecie - prog ostrzegawczy dolny (230 V -10%).'
+        - macro: '{$MSPDU.VOLTAGE.MIN.CRIT}'
+          value: '195'
+        - macro: '{$MSPDU.VOLTAGE.MAX.WARN}'
+          value: '253'
+          description: 'Napiecie - prog ostrzegawczy gorny (230 V +10%).'
+        - macro: '{$MSPDU.VOLTAGE.MAX.CRIT}'
+          value: '260'
+        - macro: '{$MSPDU.FREQ.MIN}'
+          value: '49'
+        - macro: '{$MSPDU.FREQ.MAX}'
+          value: '51'
+        - macro: '{$MSPDU.PHASE.CURRENT.MAX}'
+          value: '16'
+          description: 'Prad znamionowy wejscia listwy (A). Progi: 80% = WARN, 100% = HIGH.'
+        - macro: '{$MSPDU.PF.MIN}'
+          value: '0.6'
+          description: 'Minimalny akceptowalny PF fazy.'
+        - macro: '{$MSPDU.PF.CURRENT.MIN}'
+          value: '1'
+          description: 'Ponizej tego pradu (A) PF fazy jest ignorowany.'
+        - macro: '{$MSPDU.OUTLET.STATE.ON}'
+          value: 'ON'
+          description: 'Wartosc oznaczajaca gniazdo zalaczone. Item normalizuje odczyt do WIELKICH liter.'
+        - macro: '{$MSPDU.OUTLET.OFF.ALERT}'
+          value: '1'
+          description: 'Alarm gdy gniazdo wylaczone. Kontekst: {$MSPDU.OUTLET.OFF.ALERT:"5"} = 0 aby wyciszyc gniazdo 5.'
+        - macro: '{$MSPDU.OUTLET.CURRENT.MAX}'
+          value: '16'
+          description: 'Maksymalny prad gniazda (A). 0 = triggery pradowe wylaczone (np. gdy listwa nie mierzy pradu per gniazdo).'
+        - macro: '{$MSPDU.OUTLET.POWER.MAX}'
+          value: '3000'
+          description: 'Maksymalna moc gniazda (W). 0 = trigger wylaczony.'
+        - macro: '{$MSPDU.OUTLET.POWER.MIN}'
+          value: '0'
+          description: 'Minimalna oczekiwana moc gniazda (W). 0 = trigger "brak obciazenia" WYLACZONY. Ustaw kontekstowo, np. {$MSPDU.OUTLET.POWER.MIN:"3"} = 30.'
+        - macro: '{$MSPDU.OUTLET.NOLOAD.PERIOD}'
+          value: 15m
+          description: 'Okno oceny braku obciazenia gniazda.'
+        - macro: '{$MSPDU.OUTLET.PF.MIN}'
+          value: '0.6'
+          description: 'Minimalny PF gniazda.'
+        - macro: '{$MSPDU.OUTLET.PF.POWER.MIN}'
+          value: '50'
+          description: 'Ponizej tej mocy (W) PF gniazda jest ignorowany.'
+        - macro: '{$MSPDU.OUTLET.TEMP.MAX}'
+          value: '35'
+          description: 'Maksymalna temperatura otoczenia (C).'
+        - macro: '{$MSPDU.OUTLET.TEMP.MIN}'
+          value: '5'
+          description: 'Minimalna temperatura otoczenia (C).'
+        - macro: '{$MSPDU.OUTLET.HUM.MAX}'
+          value: '80'
+          description: 'Maksymalna wilgotnosc (%).'
+        - macro: '{$MSPDU.HUM.MIN}'
+          value: '20'
+          description: 'Minimalna wilgotnosc (%).'
+        - macro: '{$MSPDU.SENSOR1.ENABLED}'
+          value: '1'
+          description: 'Czy czujnik 1 jest fizycznie podlaczony (0/1) - blokuje falszywe alarmy przy odczycie 0.'
+        - macro: '{$MSPDU.SENSOR2.ENABLED}'
+          value: '0'
+          description: 'Czy czujnik 2 jest fizycznie podlaczony (0/1).'
